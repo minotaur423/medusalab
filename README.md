@@ -36,3 +36,26 @@ Enterprise Platform Engineering Lab
 
 \- Enterprise Architecture
 
+## Current Status
+
+### Completed
+
+- Platform Foundation
+- Engineering Standards
+- Ubuntu WSL Engineering Workstation Foundation
+
+### In Progress
+
+- Platform Engineering Toolchain
+
+### Planned
+
+- VMware Golden Images
+- Kubernetes (RKE2)
+- Rancher
+- Jenkins
+- Artifactory
+- Vault
+- Grafana
+- Prometheus
+- GitOps
