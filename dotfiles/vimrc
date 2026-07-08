@@ -1,12 +1,3 @@
-###############################################################################
-# MedusaLab Standard Workstation Configuration
-#
-# File: vimrc
-# Purpose: Standard Vim configuration for MedusaLab engineering workstations.
-#
-# Managed through Git.
-# Manual edits should be committed back to the repository.
-###############################################################################
 set nocompatible
 set number
 set relativenumber
@@ -19,7 +10,6 @@ set hlsearch
 set incsearch
 set ignorecase
 set smartcase
-set mouse=a
 syntax on
 filetype plugin indent on
 set clipboard=unnamedplus
