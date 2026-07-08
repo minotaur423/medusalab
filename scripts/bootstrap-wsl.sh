@@ -27,4 +27,7 @@ ln -sf "$HOME/lab/medusalab/dotfiles/vimrc" "$HOME/.vimrc"
 ln -sf "$HOME/lab/medusalab/dotfiles/tmux.conf" "$HOME/.tmux.conf"
 ln -sf "$HOME/lab/medusalab/dotfiles/inputrc" "$HOME/.inputrc"
 
+echo "Installing vendor-managed tools..."
+"$HOME/lab/medusalab/scripts/installers/install-powershell.sh"
+
 echo "Bootstrap complete."
