@@ -1,3 +1,12 @@
+"==============================================================================
+" MedusaLab Standard Workstation Configuration
+"
+" File: vimrc
+" Purpose: Standard Vim configuration for MedusaLab engineering workstations.
+"
+" Managed through Git.
+" Manual edits should be committed back to the repository.
+"==============================================================================
 set nocompatible
 set number
 set relativenumber
