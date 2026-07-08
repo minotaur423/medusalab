@@ -1,0 +1,12 @@
+###############################################################################
+# MedusaLab Standard Workstation Configuration
+#
+# File: inputrc
+# Purpose: Standard inputrc configuration for MedusaLab engineering workstations.
+#
+# Managed through Git.
+# Manual edits should be committed back to the repository.
+###############################################################################
+set editing-mode vi
+set completion-ignore-case on
+set show-all-if-ambiguous on
