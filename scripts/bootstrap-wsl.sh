@@ -29,5 +29,6 @@ ln -sf "$HOME/lab/medusalab/dotfiles/inputrc" "$HOME/.inputrc"
 
 echo "Installing vendor-managed tools..."
 "$HOME/lab/medusalab/scripts/installers/install-powershell.sh"
+"$HOME/lab/medusalab/scripts/installers/install-ansible.sh"
 
 echo "Bootstrap complete."

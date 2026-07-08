@@ -33,3 +33,23 @@ Phase 2 — Engineering Workstation
 * Install DevOps toolchain
 * Configure Git and SSH
 * Install Ansible, Terraform, Helm, kubectl, k9s, jq, yq, Python, and Node.js
+
+## Phase 2 — Engineering Workstation (In Progress)
+
+### Completed
+
+- ✅ Ubuntu 24.04.4 LTS verified
+- ✅ Base packages installed
+- ✅ Git configured
+- ✅ SSH configured for GitHub and Bitbucket
+- ✅ GitHub remote converted to SSH
+- ✅ Dotfiles repository created
+- ✅ Bootstrap script created
+- ✅ PowerShell 7 installed
+- ✅ ADR-0002 completed
+
+### Next
+
+- Install Ansible
+- Build workstation playbook
+- Install Terraform
