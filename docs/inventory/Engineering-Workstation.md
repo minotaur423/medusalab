@@ -119,6 +119,14 @@ kubectl is the primary administrative interface for Kubernetes clusters within M
 * Installer: `scripts/installers/install-powershell.sh`
 * Verify: `pwsh --version`
 
+# Utilities
+
+## yq
+
+- Purpose: YAML, JSON, XML, CSV, TOML, and properties processor.
+- Install Method: GitHub release binary via `scripts/installers/install-yq.sh`.
+- Verify: `yq --version`
+
 ---
 
 # Workstation Standards

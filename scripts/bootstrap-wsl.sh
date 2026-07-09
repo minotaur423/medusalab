@@ -40,5 +40,6 @@ echo "Installing vendor-managed tools..."
 "$HOME/lab/medusalab/scripts/installers/install-kubectl.sh"
 "$HOME/lab/medusalab/scripts/installers/install-helm.sh"
 "$HOME/lab/medusalab/scripts/installers/install-k9s.sh"
+"$HOME/lab/medusalab/scripts/installers/install-yq.sh"
 
 echo "Bootstrap complete."

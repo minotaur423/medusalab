@@ -35,3 +35,6 @@
   ansible.builtin.command: k9s version
   changed_when: false
 
+- name: Verify yq
+  ansible.builtin.command: yq --version
+  changed_when: false
