@@ -37,5 +37,8 @@ echo "Installing vendor-managed tools..."
 "$HOME/lab/medusalab/scripts/installers/install-powershell.sh"
 "$HOME/lab/medusalab/scripts/installers/install-ansible.sh"
 "$HOME/lab/medusalab/scripts/installers/install-terraform.sh"
+"$HOME/lab/medusalab/scripts/installers/install-kubectl.sh"
+"$HOME/lab/medusalab/scripts/installers/install-helm.sh"
+"$HOME/lab/medusalab/scripts/installers/install-k9s.sh"
 
 echo "Bootstrap complete."

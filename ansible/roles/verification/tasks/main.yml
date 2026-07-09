@@ -26,3 +26,12 @@
 - name: Verify Terraform
   ansible.builtin.command: terraform version
   changed_when: false
+
+- name: Verify Helm
+  ansible.builtin.command: helm version
+  changed_when: false
+
+- name: Verify k9s
+  ansible.builtin.command: k9s version
+  changed_when: false
+
