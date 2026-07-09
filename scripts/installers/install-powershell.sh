@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../lib/common.sh"
+
+print_header "powershell"
+
 echo "Installing PowerShell 7..."
 
-if command -v pwsh >/dev/null 2>&1; then
+if command_exists pwsh; then
     echo "PowerShell already installed: $(pwsh --version)"
     exit 0
 fi

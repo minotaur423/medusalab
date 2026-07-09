@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../lib/common.sh"
+
+print_header "terraform"
+
 echo "Installing Terraform..."
 
-if command -v terraform >/dev/null 2>&1; then
+if command_exists terraform; then
     echo "Terraform already installed: $(terraform version | head -1)"
     exit 0
 fi

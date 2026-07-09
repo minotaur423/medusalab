@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/common.sh"
+
+print_header "WSL Bootstrap"
+require_sudo
+
 echo "Bootstrapping MedusaLab WSL workstation..."
 
 sudo apt update
