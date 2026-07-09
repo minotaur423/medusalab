@@ -12,3 +12,10 @@
 - Install Method: Microsoft APT repository.
 - Verify Command: `pwsh --version`
 - Status: Installed
+
+## Terraform
+
+- Purpose: Infrastructure as Code provisioning tool.
+- Install Method: HashiCorp APT repository.
+- Verify Command: `terraform version`
+- Status: Installed
