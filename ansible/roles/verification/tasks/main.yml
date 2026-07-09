@@ -1,0 +1,28 @@
+---
+- name: Verify Git
+  ansible.builtin.command: git --version
+  changed_when: false
+
+- name: Verify PowerShell
+  ansible.builtin.command: pwsh --version
+  changed_when: false
+
+- name: Verify Vim
+  ansible.builtin.command: vim --version
+  changed_when: false
+
+- name: Verify tmux
+  ansible.builtin.command: tmux -V
+  changed_when: false
+
+- name: Verify Python
+  ansible.builtin.command: python3 --version
+  changed_when: false
+
+- name: Verify SSH
+  ansible.builtin.command: ssh -V
+  changed_when: false
+
+- name: Verify Terraform
+  ansible.builtin.command: terraform version
+  changed_when: false
