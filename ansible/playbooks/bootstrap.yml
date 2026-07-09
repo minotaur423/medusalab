@@ -1,0 +1,22 @@
+---
+- name: Bootstrap MedusaLab Engineering Workstation
+  hosts: localhost
+  gather_facts: true
+
+  tasks:
+
+    - name: Verify Git
+      ansible.builtin.command: git --version
+      changed_when: false
+
+    - name: Verify PowerShell
+      ansible.builtin.command: pwsh --version
+      changed_when: false
+
+    - name: Verify Vim
+      ansible.builtin.command: vim --version
+      changed_when: false
+
+    - name: Verify tmux
+      ansible.builtin.command: tmux -V
+      changed_when: false
