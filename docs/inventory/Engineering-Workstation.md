@@ -16,6 +16,6 @@
 ## Terraform
 
 - Purpose: Infrastructure as Code provisioning tool.
-- Install Method: HashiCorp APT repository.
+- Install Method: HashiCorp APT repository via `scripts/installers/install-terraform.sh`.
 - Verify Command: `terraform version`
 - Status: Installed
