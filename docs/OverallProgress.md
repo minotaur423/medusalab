@@ -78,4 +78,16 @@ Phase 2 — Engineering Workstation
 - Virtual networking
 - Ansible-managed VMs
 
+## OpenShift Local Platform Environment
+
+* Installed OpenShift Local CRC 2.57.0 on MEDUSA.
+* Created an OpenShift Container Platform 4.20.5 cluster using Hyper-V.
+* Configured CRC with 12 virtual CPUs, 32 GB memory, and a 150 GB virtual disk.
+* Validated Windows CRC setup, startup, web-console access, and command-line access.
+* Installed the native Linux OpenShift CLI in Ubuntu WSL.
+* Added `kubectl` and `oc` client checks to the Ansible workstation-verification role.
+* Documented Windows-hosted CRC administration and Ubuntu WSL client connectivity.
+* Established separate workflows for the unprivileged `developer` account and the `kubeadmin` cluster administrator.
+* Stored the Red Hat pull secret outside the Git repository under `D:\MedusaLab\OpenShift\secrets`.
+
 

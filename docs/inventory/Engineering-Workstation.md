@@ -168,3 +168,29 @@ The following components will be added in future phases:
 * Grafana
 * Prometheus
 
+## OpenShift Client Toolchain
+
+Ubuntu WSL serves as the primary command-line client for the Windows-hosted OpenShift Local environment.
+
+Installed client tools:
+
+* OpenShift CLI (`oc`)
+* Kubernetes CLI (`kubectl`)
+* Helm
+* k9s
+* yq
+
+OpenShift Local runs on the Windows host through Hyper-V. The Ubuntu client connects to:
+
+```text
+https://api.crc.testing:6443
+```
+
+The default Linux kubeconfig is:
+
+```text
+~/.kube/config
+```
+
+The Ansible workstation-verification role validates local client installation independently of cluster availability. OpenShift cluster-health checks are performed separately because they require CRC to be running and the user to have a valid authenticated kubeconfig.
+
