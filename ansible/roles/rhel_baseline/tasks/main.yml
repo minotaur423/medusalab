@@ -1,0 +1,60 @@
+---
+- name: Verify supported RHEL platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family == "RedHat"
+      - ansible_facts.distribution_major_version | int >= 10
+    fail_msg: >-
+      The rhel_baseline role supports Red Hat Enterprise Linux 10
+      or later.
+
+- name: Install RHEL baseline packages
+  ansible.builtin.package:
+    name: "{{ rhel_baseline_packages }}"
+    state: present
+
+- name: Ensure administrative user belongs to wheel
+  ansible.builtin.user:
+    name: "{{ rhel_baseline_admin_user }}"
+    groups:
+      - wheel
+    append: true
+
+- name: Enable and start baseline services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop: "{{ rhel_baseline_services }}"
+
+- name: Check whether SSH is allowed through firewalld
+  ansible.builtin.command:
+    cmd: >-
+      firewall-cmd
+      --zone={{ rhel_baseline_firewall_zone }}
+      --query-service=ssh
+  register: rhel_baseline_ssh_firewall
+  changed_when: false
+  failed_when: rhel_baseline_ssh_firewall.rc not in [0, 1]
+
+- name: Allow SSH through firewalld
+  ansible.builtin.command:
+    cmd: >-
+      firewall-cmd
+      --permanent
+      --zone={{ rhel_baseline_firewall_zone }}
+      --add-service=ssh
+  when: rhel_baseline_ssh_firewall.rc == 1
+  changed_when: true
+
+- name: Reload firewalld after adding SSH
+  ansible.builtin.command:
+    cmd: firewall-cmd --reload
+  when: rhel_baseline_ssh_firewall.rc == 1
+  changed_when: true
+
+- name: Verify baseline services
+  ansible.builtin.command:
+    cmd: "systemctl is-active {{ item }}"
+  loop: "{{ rhel_baseline_services }}"
+  changed_when: false

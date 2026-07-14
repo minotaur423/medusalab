@@ -1,0 +1,21 @@
+---
+- name: Configure RHEL template baseline
+  hosts: rhel_templates
+  become: true
+  gather_facts: true
+
+  roles:
+    - rhel_baseline
+
+  post_tasks:
+    - name: Display template baseline information
+      ansible.builtin.debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Hostname: {{ ansible_facts.hostname }}"
+          - >-
+            Operating system:
+            {{ ansible_facts.distribution }}
+            {{ ansible_facts.distribution_version }}
+          - "Architecture: {{ ansible_facts.architecture }}"
+          - "Virtualization: {{ ansible_facts.virtualization_type }}"

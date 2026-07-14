@@ -1,0 +1,26 @@
+---
+rhel_baseline_admin_user: minotaur423
+rhel_baseline_firewall_zone: public
+
+rhel_baseline_packages:
+  - bash-completion
+  - bind-utils
+  - chrony
+  - curl
+  - firewalld
+  - git
+  - iproute
+  - open-vm-tools
+  - openssh-server
+  - python3
+  - sudo
+  - tar
+  - unzip
+  - vim-enhanced
+  - wget
+
+rhel_baseline_services:
+  - chronyd
+  - firewalld
+  - sshd
+  - vmtoolsd
