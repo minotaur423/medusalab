@@ -47,3 +47,7 @@
 - name: Verify OpenShift CLI
   ansible.builtin.command: oc version --client
   changed_when: false
+
+- name: Verify keychain
+  ansible.builtin.command: keychain --version
+  changed_when: false
