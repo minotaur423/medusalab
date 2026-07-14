@@ -1,0 +1,8 @@
+---
+- name: Configure managed RHEL systems
+  hosts: rhel_managed
+  become: true
+  gather_facts: true
+
+  roles:
+    - rhel_baseline

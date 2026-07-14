@@ -76,6 +76,8 @@
 
 ## Phase 4 — Infrastructure 🚧
 
+## Phase 4 — Infrastructure 🚧
+
 ### Completed
 
 * VMware Workstation 26.0.0 installation verified
@@ -89,16 +91,34 @@
 * VMware storage hierarchy created
 * ADR-0003 VMware networking and storage strategy created
 * VMware infrastructure standard created
+* RHEL 10.2 golden image created
+* RHEL golden-image baseline automated with Ansible
+* SSH public-key authentication configured
+* Golden image prepared for cloning
+* Golden image registration and machine-specific identity removed
+* Golden image sealed and powered off
+* Full clone `rhel10-test01` created
+* Unique machine identity and SSH host keys validated
+* VMnet1 static management addressing validated
+* VMnet8 DHCP and outbound connectivity validated
+* MEDUSA-to-VM management access validated
+* Ubuntu WSL-to-VM SSH access validated
+* Windows TCP proxy for WSL management configured
+* Independent Red Hat registration validated
+* Managed RHEL Ansible inventory created
+* RHEL baseline applied successfully
+* RHEL baseline idempotence validated
+* Virtual-machine inventory documented
+* Static IP allocation register created
+* WSL-to-VMware SSH runbook created
 
 ### Next
 
-* Build the first Linux golden image
-* Validate dual-network connectivity
-* Validate MEDUSA-to-VM management access
-* Validate Ubuntu WSL-to-VM management access
-* Configure SSH public-key authentication
-* Add the first VM to Ansible inventory
-* Run the Ansible baseline against the VM
-* Build reusable Ubuntu and RHEL templates
+* Build the Ubuntu 24.04 golden image
+* Automate the Ubuntu golden-image baseline
+* Validate the Ubuntu full-clone workflow
+* Create the first permanent infrastructure VM
+* Define permanent infrastructure hostname and IP allocations
 * Begin Ansible-managed infrastructure deployment
+* Retire or repurpose `rhel10-test01` after validation is complete
 
