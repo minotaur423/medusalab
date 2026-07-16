@@ -1,0 +1,38 @@
+---
+- name: Verify supported Ubuntu platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == "Ubuntu"
+      - ansible_facts.distribution_major_version | int >= 24
+    fail_msg: >-
+      The ubuntu_baseline role supports Ubuntu 24.04 or later.
+
+- name: Update APT cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install Ubuntu baseline packages
+  ansible.builtin.apt:
+    name: "{{ ubuntu_baseline_packages }}"
+    state: present
+
+- name: Ensure administrative user belongs to sudo
+  ansible.builtin.user:
+    name: "{{ ubuntu_baseline_admin_user }}"
+    groups:
+      - sudo
+    append: true
+
+- name: Enable and start Ubuntu baseline services
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop: "{{ ubuntu_baseline_services }}"
+
+- name: Verify Ubuntu baseline services
+  ansible.builtin.command:
+    cmd: "systemctl is-active {{ item }}"
+  loop: "{{ ubuntu_baseline_services }}"
+  changed_when: false

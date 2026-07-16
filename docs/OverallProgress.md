@@ -76,8 +76,6 @@
 
 ## Phase 4 — Infrastructure 🚧
 
-## Phase 4 — Infrastructure 🚧
-
 ### Completed
 
 * VMware Workstation 26.0.0 installation verified
@@ -93,32 +91,43 @@
 * VMware infrastructure standard created
 * RHEL 10.2 golden image created
 * RHEL golden-image baseline automated with Ansible
-* SSH public-key authentication configured
-* Golden image prepared for cloning
-* Golden image registration and machine-specific identity removed
-* Golden image sealed and powered off
-* Full clone `rhel10-test01` created
-* Unique machine identity and SSH host keys validated
-* VMnet1 static management addressing validated
-* VMnet8 DHCP and outbound connectivity validated
-* MEDUSA-to-VM management access validated
-* Ubuntu WSL-to-VM SSH access validated
-* Windows TCP proxy for WSL management configured
-* Independent Red Hat registration validated
-* Managed RHEL Ansible inventory created
-* RHEL baseline applied successfully
-* RHEL baseline idempotence validated
-* Virtual-machine inventory documented
-* Static IP allocation register created
-* WSL-to-VMware SSH runbook created
+* RHEL SSH public-key authentication configured
+* RHEL golden image prepared and sealed
+* RHEL full-clone workflow validated with `rhel10-test01`
+* RHEL unique machine identity and SSH host keys validated
+* RHEL static VMnet1 management addressing validated
+* RHEL VMnet8 outbound connectivity validated
+* RHEL independent Red Hat registration validated
+* RHEL Ansible baseline and idempotence validated
+* Ubuntu Server 24.04.4 golden image created
+* Ubuntu dual-network routing standardized
+* Ubuntu golden-image baseline automated with Ansible
+* Ubuntu SSH public-key authentication configured
+* Ubuntu SSH host-key regeneration service created
+* Ubuntu cloud-init policy standardized
+* Ubuntu machine identity prepared for cloning
+* Ubuntu golden image sealed and powered off
+* Ubuntu full-clone workflow validated with `ubuntu-test01`
+* Ubuntu unique machine identity and SSH host keys validated
+* Ubuntu static VMnet1 management addressing validated
+* Ubuntu VMnet8 outbound connectivity validated
+* Ubuntu WSL SSH connectivity validated
+* Ubuntu Ansible baseline and idempotence validated
+* Ubuntu golden-image runbook created
+* Virtual-machine inventory updated
+* Static IP and SSH proxy allocations updated
 
 ### Next
 
-* Build the Ubuntu 24.04 golden image
-* Automate the Ubuntu golden-image baseline
-* Validate the Ubuntu full-clone workflow
-* Create the first permanent infrastructure VM
-* Define permanent infrastructure hostname and IP allocations
-* Begin Ansible-managed infrastructure deployment
-* Retire or repurpose `rhel10-test01` after validation is complete
+* Create the first permanent infrastructure VM, `dns01`
+* Assign `dns01` the VMnet1 address `192.168.141.10/24`
+* Establish WSL SSH access on port `2220`
+* Add `dns01` to the managed RHEL Ansible inventory
+* Define the MedusaLab internal DNS namespace
+* Install and configure the internal DNS service
+* Create forward and reverse DNS zones
+* Configure infrastructure systems to use internal DNS
+* Validate name resolution from Windows, WSL, RHEL, and Ubuntu
+* Document DNS operations and recovery procedures
+* Retire or repurpose the golden-image validation clones
 

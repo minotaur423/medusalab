@@ -1,0 +1,25 @@
+---
+ubuntu_baseline_admin_user: minotaur423
+
+ubuntu_baseline_packages:
+  - bash-completion
+  - ca-certificates
+  - chrony
+  - curl
+  - dnsutils
+  - git
+  - iproute2
+  - open-vm-tools
+  - openssh-server
+  - python3
+  - python3-apt
+  - sudo
+  - tar
+  - unzip
+  - vim
+  - wget
+
+ubuntu_baseline_services:
+  - chrony
+  - open-vm-tools
+  - ssh

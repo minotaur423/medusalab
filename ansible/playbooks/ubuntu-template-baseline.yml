@@ -1,0 +1,21 @@
+---
+- name: Configure Ubuntu template baseline
+  hosts: ubuntu_templates
+  become: true
+  gather_facts: true
+
+  roles:
+    - ubuntu_baseline
+
+  post_tasks:
+    - name: Display Ubuntu template information
+      ansible.builtin.debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Hostname: {{ ansible_facts.hostname }}"
+          - >-
+            Operating system:
+            {{ ansible_facts.distribution }}
+            {{ ansible_facts.distribution_version }}
+          - "Architecture: {{ ansible_facts.architecture }}"
+          - "Virtualization: {{ ansible_facts.virtualization_type }}"
