@@ -1,5 +1,8 @@
 ---
-dns_client_server: 192.168.141.10
+dns_client_servers:
+  - 192.168.141.10
+  - 192.168.141.11
+
 dns_client_domain: medusalab.test
 dns_client_test_name: dns01.medusalab.test
 dns_client_expected_address: 192.168.141.10

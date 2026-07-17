@@ -7,6 +7,11 @@ acl "medusalab-clients" {
 {% endfor %}
 };
 
+key "{{ bind_dns_transfer_key_name }}" {
+    algorithm hmac-sha256;
+    secret "{{ bind_dns_transfer_secret }}";
+};
+
 options {
     listen-on port 53 {
 {% for address in bind_dns_listen_ipv4 %}
@@ -65,29 +70,87 @@ zone "." IN {
     file "named.ca";
 };
 
+{% if bind_dns_server_role == "primary" %}
 zone "{{ bind_dns_domain }}" IN {
     type master;
     file "{{ bind_dns_domain }}.zone";
+
     allow-query {
         medusalab-clients;
     };
+
     allow-transfer {
-        none;
+        key {{ bind_dns_transfer_key_name }};
     };
-    notify no;
+
+    also-notify {
+{% for server in bind_dns_secondary_servers %}
+        {{ server }};
+{% endfor %}
+    };
+
+    notify yes;
 };
 
 zone "{{ bind_dns_reverse_zone }}" IN {
     type master;
     file "{{ bind_dns_reverse_zone }}.zone";
+
     allow-query {
         medusalab-clients;
     };
+
+    allow-transfer {
+        key {{ bind_dns_transfer_key_name }};
+    };
+
+    also-notify {
+{% for server in bind_dns_secondary_servers %}
+        {{ server }};
+{% endfor %}
+    };
+
+    notify yes;
+};
+{% elif bind_dns_server_role == "secondary" %}
+zone "{{ bind_dns_domain }}" IN {
+    type slave;
+    file "slaves/{{ bind_dns_domain }}.zone";
+
+    allow-query {
+        medusalab-clients;
+    };
+
     allow-transfer {
         none;
     };
-    notify no;
+
+    masters {
+{% for server in bind_dns_primary_servers %}
+        {{ server }} key {{ bind_dns_transfer_key_name }};
+{% endfor %}
+    };
 };
+
+zone "{{ bind_dns_reverse_zone }}" IN {
+    type slave;
+    file "slaves/{{ bind_dns_reverse_zone }}.zone";
+
+    allow-query {
+        medusalab-clients;
+    };
+
+    allow-transfer {
+        none;
+    };
+
+    masters {
+{% for server in bind_dns_primary_servers %}
+        {{ server }} key {{ bind_dns_transfer_key_name }};
+{% endfor %}
+    };
+};
+{% endif %}
 
 include "/etc/named.rfc1912.zones";
 include "/etc/named.root.key";

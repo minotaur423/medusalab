@@ -12,7 +12,9 @@ network:
         - {{ dns_client_ubuntu_management_address }}
       nameservers:
         addresses:
-          - {{ dns_client_server }}
+{% for server in dns_client_servers %}
+          - {{ server }}
+{% endfor %}
         search:
           - {{ dns_client_domain }}
       optional: true
@@ -21,4 +23,6 @@ network:
       dhcp4: true
       dhcp4-overrides:
         route-metric: 100
+        use-dns: false
+        use-domains: false
       optional: true

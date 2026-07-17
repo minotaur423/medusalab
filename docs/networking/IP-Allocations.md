@@ -67,7 +67,8 @@ VMnet8 addresses are normally dynamic and are therefore not included in the stat
 | Address          | Hostname        | Platform       | Purpose                               | Lifecycle status  |
 | ---------------- | --------------- | -------------- | ------------------------------------- | ----------------- |
 | `192.168.141.1`  | `MEDUSA`        | Windows 11     | VMware VMnet1 host adapter            | System assigned   |
-| `192.168.141.10` | `dns01`         | RHEL 10        | Permanent internal DNS infrastructure | Active            |
+| `192.168.141.10` | `dns01`         | RHEL 10        | Primary internal DNS infrastructure   | Active            |
+| `192.168.141.11` | `dns02`         | RHEL 10        | Secondary internal DNS infrastructure | Active            |
 | `192.168.141.20` | `rhel10-test01` | RHEL 10.2      | RHEL golden-image validation          | Active validation |
 | `192.168.141.21` | `ubuntu-test01` | Ubuntu 24.04.4 | Ubuntu golden-image validation        | Active validation |
 
@@ -126,6 +127,7 @@ Windows TCP port proxies provide access from WSL to VMnet1 SSH services.
 | `127.0.0.1`            |      `2211` | `192.168.141.20:22` | `rhel10-test01` | Active while validation VM is retained |
 | `127.0.0.1`            |      `2213` | `192.168.141.21:22` | `ubuntu-test01` | Active while validation VM is retained |
 | `127.0.0.1`            |      `2220` | `192.168.141.10:22` | `dns01`         | Active                                 |
+| `127.0.0.1`            |      `2221` | `192.168.141.11:22` | `dns02`         | Active                                 |
 
 The proxy register must be updated whenever:
 
@@ -187,17 +189,22 @@ The following templates therefore do not appear in the static assignment table:
 
 ## Internal DNS Namespace
 
-| Property	            | Value                                |
-| --------------------- | ------------------------------------ |
-| DNS server	        | `dns01.medusalab.test`               |
-| DNS address	        | `192.168.141.10`                     |
-| Forward zone	        | `medusalab.test`                     |
-| Reverse zone	        | `141.168.192.in-addr.arpa`           |
-| Trusted network	    | `192.168.141.0/24`                   |
-| External forwarding	| `1.1.1.1`, `1.0.0.1`                 |
-| Forwarding policy	    | Forward first                        |
-| Windows integration   | NRPT rule for `.medusalab.test`      |
-| WSL integration	    | Windows DNS path with DNS tunneling  |
+| Property	             | Value                                              |
+| ---------------------- | -------------------------------------------------- |
+| Primary DNS server	 | `dns01.medusalab.test`                             |
+| Primary DNS address	 | `192.168.141.10`                                   |
+| Secondary DNS server	 | `dns02.medusalab.test`                             |
+| Secondary DNS address  | `192.168.141.11`                                   |
+| Forward zone	         | `medusalab.test`                                   |
+| Reverse zone	         | `141.168.192.in-addr.arpa`                         |
+| Trusted network	     | `192.168.141.0/24`                                 |
+| External forwarding	 | `1.1.1.1`, `1.0.0.1`                               |
+| Forwarding policy	     | Forward first                                      |
+| Zone Transfer Security | TSIG with encrypted Ansible Vault secret           |
+| Linux Resolver Order   | `192.168.141.10`, `192.168.141.11`                 |
+| Windows integration    | NRPT rule for `.medusalab.test` using both servers |
+| WSL integration	     | Windows DNS path with DNS tunneling                |
+| Failover Validation    | Passed                                             |
 
 The VMnet8 address 192.168.197.2 is the VMware NAT gateway. It must not be documented as a guaranteed recursive DNS resolver.
 

@@ -5,7 +5,7 @@
       - dns_client_rhel_management_connection | length > 0
       - dns_client_rhel_external_connection | length > 0
 
-- name: Read the current management DNS server
+- name: Read the current management DNS servers
   ansible.builtin.command:
     argv:
       - nmcli
@@ -41,6 +41,18 @@
   register: dns_client_rhel_current_management_priority
   changed_when: false
 
+- name: Read management automatic-DNS setting
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - -g
+      - ipv4.ignore-auto-dns
+      - connection
+      - show
+      - "{{ dns_client_rhel_management_connection }}"
+  register: dns_client_rhel_management_ignore_auto_dns
+  changed_when: false
+
 - name: Read the current external DNS priority
   ansible.builtin.command:
     argv:
@@ -53,7 +65,19 @@
   register: dns_client_rhel_current_external_priority
   changed_when: false
 
-- name: Configure DNS on the RHEL management connection
+- name: Read external automatic-DNS setting
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - -g
+      - ipv4.ignore-auto-dns
+      - connection
+      - show
+      - "{{ dns_client_rhel_external_connection }}"
+  register: dns_client_rhel_external_ignore_auto_dns
+  changed_when: false
+
+- name: Configure both DNS servers on the RHEL management connection
   ansible.builtin.command:
     argv:
       - nmcli
@@ -61,19 +85,25 @@
       - modify
       - "{{ dns_client_rhel_management_connection }}"
       - ipv4.dns
-      - "{{ dns_client_server }}"
+      - "{{ dns_client_servers | join(' ') }}"
       - ipv4.dns-search
       - "{{ dns_client_domain }}"
       - ipv4.dns-priority
       - "{{ dns_client_rhel_management_dns_priority | string }}"
+      - ipv4.ignore-auto-dns
+      - "yes"
   when: >-
-    dns_client_rhel_current_dns.stdout | trim != dns_client_server or
-    dns_client_rhel_current_search.stdout | trim != dns_client_domain or
+    dns_client_rhel_current_dns.stdout | trim
+      != dns_client_servers | join(',') or
+    dns_client_rhel_current_search.stdout | trim
+      != dns_client_domain or
     dns_client_rhel_current_management_priority.stdout | trim
-      != dns_client_rhel_management_dns_priority | string
+      != dns_client_rhel_management_dns_priority | string or
+    dns_client_rhel_management_ignore_auto_dns.stdout | trim
+      != "yes"
   notify: Reactivate RHEL management connection
 
-- name: Set the external RHEL DNS priority
+- name: Disable DHCP-provided DNS on the external RHEL connection
   ansible.builtin.command:
     argv:
       - nmcli
@@ -82,9 +112,13 @@
       - "{{ dns_client_rhel_external_connection }}"
       - ipv4.dns-priority
       - "{{ dns_client_rhel_external_dns_priority | string }}"
+      - ipv4.ignore-auto-dns
+      - "yes"
   when: >-
     dns_client_rhel_current_external_priority.stdout | trim
-      != dns_client_rhel_external_dns_priority | string
+      != dns_client_rhel_external_dns_priority | string or
+    dns_client_rhel_external_ignore_auto_dns.stdout | trim
+      != "yes"
   notify: Reactivate RHEL external connection
 
 - name: Apply pending RHEL network changes

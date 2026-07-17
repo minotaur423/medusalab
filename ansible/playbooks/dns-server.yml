@@ -1,6 +1,14 @@
 ---
-- name: Configure MedusaLab DNS servers
-  hosts: dns_servers
+- name: Configure primary MedusaLab DNS servers
+  hosts: dns_primaries
+  become: true
+  gather_facts: true
+
+  roles:
+    - bind_dns
+
+- name: Configure secondary MedusaLab DNS servers
+  hosts: dns_secondaries
   become: true
   gather_facts: true
 

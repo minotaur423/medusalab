@@ -116,15 +116,15 @@
 * Ubuntu golden-image runbook created
 * Virtual-machine inventory updated
 * Static IP and SSH proxy allocations updated
-* Permanent RHEL infrastructure VM dns01 created
-* dns01 static management identity configured
-* dns01 independently registered with Red Hat
-* dns01 enrolled in the managed RHEL Ansible inventory
-* RHEL baseline applied idempotently to dns01
+* Permanent RHEL infrastructure VM `dns01` created
+* `dns01` static management identity configured
+* `dns01` independently registered with Red Hat
+* `dns01` enrolled in the managed RHEL Ansible inventory
+* RHEL baseline applied idempotently to `dns01`
 * Reusable bind_dns Ansible role created
 * BIND authoritative DNS service deployed
 * Internal namespace medusalab.test established
-* Reverse zone 141.168.192.in-addr.arpa established
+* Reverse zone `141.168.192.in-addr.arpa` established
 * Forward and reverse zone validation completed
 * Restricted recursive DNS configured
 * External forwarders and fallback recursion validated
@@ -137,12 +137,37 @@
 * WSL DNS tunneling validated
 * Cross-platform internal and external DNS resolution validated
 * Internal DNS ADR and operational runbook created
+* Secondary RHEL infrastructure VM `dns02` created
+* `dns02` static management identity configured
+* `dns02` independently registered with Red Hat
+* `dns02` enrolled in the managed RHEL inventory
+* RHEL baseline applied idempotently to dns02
+* DNS inventory separated into primary and secondary groups
+* BIND role refactored for primary and secondary operation
+* Encrypted Ansible Vault variable created for DNS transfer authentication
+* TSIG-authenticated zone transfers configured
+* `dns02` A and PTR records added
+* Dual authoritative NS records configured
+* Forward zone transferred successfully to `dns02`
+* Reverse zone transferred successfully to `dns02`
+* Matching SOA serials validated
+* RHEL clients configured with dual DNS servers
+* Ubuntu clients configured with dual DNS servers
+* Windows NRPT rule updated with dual DNS servers
+* WSL dual-DNS resolution validated
+* Controlled `dns01` outage test completed
+* RHEL resolution continued during the primary outage
+* Ubuntu resolution continued during the primary outage
+* Windows resolution continued during the primary outage
+* WSL resolution continued during the primary outage
+* `dns01` restored and final DNS health validated
+* DNS high-availability ADR and runbook created
 
 ### Next
-
-* Add new infrastructure records through the managed DNS zones
-* Deploy a secondary internal DNS server
-* Add automated DNS availability monitoring
+* Add automated DNS availability and zone-serial monitoring
+* Add alerts for failed zone transfers
 * Automate Windows NRPT configuration
-* Evaluate the next permanent infrastructure service
-* Retire or repurpose the golden-image validation systems when no longer required
+* Evaluate placement of a DNS server on a separate physical host
+* Select and deploy the next permanent infrastructure service
+* Retire or repurpose validation systems when no longer required
+

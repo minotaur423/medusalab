@@ -1,0 +1,14 @@
+---
+bind_dns_server_role: primary
+
+bind_dns_listen_ipv4:
+  - 127.0.0.1
+  - 192.168.141.10
+
+bind_dns_secondary_servers:
+  - 192.168.141.11
+
+bind_dns_primary_servers: []
+
+bind_dns_validation_fqdn: dns01.medusalab.test
+bind_dns_expected_address: 192.168.141.10

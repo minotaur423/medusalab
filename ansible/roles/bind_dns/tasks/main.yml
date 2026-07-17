@@ -8,19 +8,36 @@
       The bind_dns role currently supports Red Hat Enterprise Linux 10
       or later.
 
-- name: Verify required DNS variables
+- name: Verify common DNS variables
   ansible.builtin.assert:
     that:
+      - bind_dns_server_role in ["primary", "secondary"]
       - bind_dns_domain | length > 0
       - bind_dns_reverse_zone | length > 0
       - bind_dns_primary_fqdn | length > 0
       - bind_dns_admin_rname | length > 0
       - bind_dns_listen_ipv4 | length > 0
       - bind_dns_allowed_networks | length > 0
-      - bind_dns_forward_records | length > 0
-      - bind_dns_reverse_records | length > 0
+      - bind_dns_nameservers | length >= 2
+      - bind_dns_validation_fqdn | length > 0
+      - bind_dns_expected_address | length > 0
+      - bind_dns_transfer_secret | length > 0
     fail_msg: >-
       One or more required bind_dns variables are missing.
+
+- name: Verify primary-server variables
+  ansible.builtin.assert:
+    that:
+      - bind_dns_secondary_servers | length > 0
+      - bind_dns_forward_records | length > 0
+      - bind_dns_reverse_records | length > 0
+  when: bind_dns_server_role == "primary"
+
+- name: Verify secondary-server variables
+  ansible.builtin.assert:
+    that:
+      - bind_dns_primary_servers | length > 0
+  when: bind_dns_server_role == "secondary"
 
 - name: Verify SELinux is enforcing
   ansible.builtin.assert:
@@ -47,6 +64,15 @@
     path: /etc/crypto-policies/back-ends/bind.config
   register: bind_dns_crypto_policy
 
+- name: Ensure the secondary zone directory exists
+  ansible.builtin.file:
+    path: "{{ bind_dns_secondary_zone_directory }}"
+    state: directory
+    owner: named
+    group: named
+    mode: "0770"
+  when: bind_dns_server_role == "secondary"
+
 - name: Deploy the BIND configuration
   ansible.builtin.template:
     src: named.conf.j2
@@ -55,9 +81,10 @@
     group: named
     mode: "0640"
     validate: named-checkconf %s
+  no_log: true
   notify: Reload named
 
-- name: Deploy the forward DNS zone
+- name: Deploy the forward DNS zone on the primary
   ansible.builtin.template:
     src: forward.zone.j2
     dest: >-
@@ -67,9 +94,10 @@
     mode: "0640"
     validate: >-
       named-checkzone {{ bind_dns_domain }} %s
+  when: bind_dns_server_role == "primary"
   notify: Reload named
 
-- name: Deploy the reverse DNS zone
+- name: Deploy the reverse DNS zone on the primary
   ansible.builtin.template:
     src: reverse.zone.j2
     dest: >-
@@ -79,41 +107,73 @@
     mode: "0640"
     validate: >-
       named-checkzone {{ bind_dns_reverse_zone }} %s
+  when: bind_dns_server_role == "primary"
   notify: Reload named
 
-- name: Restore SELinux contexts on BIND files
+- name: Restore the BIND configuration SELinux context
   ansible.builtin.command:
-    cmd: "restorecon -v {{ item }}"
-  loop:
-    - "{{ bind_dns_config_path }}"
-    - "{{ bind_dns_zone_directory }}/{{ bind_dns_domain }}.zone"
-    - >-
-      {{ bind_dns_zone_directory }}/{{ bind_dns_reverse_zone }}.zone
+    argv:
+      - restorecon
+      - -v
+      - "{{ bind_dns_config_path }}"
   changed_when: false
 
-- name: Validate the complete BIND configuration and zones
+- name: Restore primary zone SELinux contexts
   ansible.builtin.command:
-    cmd: named-checkconf -z "{{ bind_dns_config_path }}"
+    argv:
+      - restorecon
+      - -v
+      - "{{ item }}"
+  loop:
+    - "{{ bind_dns_zone_directory }}/{{ bind_dns_domain }}.zone"
+    - "{{ bind_dns_zone_directory }}/{{ bind_dns_reverse_zone }}.zone"
+  when: bind_dns_server_role == "primary"
+  changed_when: false
+
+- name: Restore the secondary directory SELinux context
+  ansible.builtin.command:
+    argv:
+      - restorecon
+      - -Rv
+      - "{{ bind_dns_secondary_zone_directory }}"
+  when: bind_dns_server_role == "secondary"
+  changed_when: false
+
+- name: Validate the primary configuration and local zones
+  ansible.builtin.command:
+    argv:
+      - named-checkconf
+      - -z
+      - "{{ bind_dns_config_path }}"
+  when: bind_dns_server_role == "primary"
+  changed_when: false
+
+- name: Validate the secondary configuration syntax
+  ansible.builtin.command:
+    argv:
+      - named-checkconf
+      - "{{ bind_dns_config_path }}"
+  when: bind_dns_server_role == "secondary"
   changed_when: false
 
 - name: Check whether DNS is enabled in firewalld
   ansible.builtin.command:
-    cmd: >-
-      firewall-cmd
-      --permanent
-      --zone={{ bind_dns_firewall_zone }}
-      --query-service=dns
+    argv:
+      - firewall-cmd
+      - --permanent
+      - "--zone={{ bind_dns_firewall_zone }}"
+      - --query-service=dns
   register: bind_dns_firewall_query
   changed_when: false
   failed_when: bind_dns_firewall_query.rc not in [0, 1]
 
 - name: Enable DNS in firewalld
   ansible.builtin.command:
-    cmd: >-
-      firewall-cmd
-      --permanent
-      --zone={{ bind_dns_firewall_zone }}
-      --add-service=dns
+    argv:
+      - firewall-cmd
+      - --permanent
+      - "--zone={{ bind_dns_firewall_zone }}"
+      - --add-service=dns
   when: bind_dns_firewall_query.rc == 1
   notify: Reload firewalld
 
@@ -126,33 +186,108 @@
 - name: Apply pending BIND and firewall handlers
   ansible.builtin.meta: flush_handlers
 
-- name: Verify the authoritative forward record
+- name: Wait for the DNS listener
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 53
+    timeout: 30
+
+- name: Wait for the forward zone to reach the current serial
   ansible.builtin.command:
-    cmd: >-
-      dig +short
-      @127.0.0.1
-      A
-      {{ bind_dns_primary_fqdn }}
+    argv:
+      - dig
+      - +short
+      - +time=3
+      - +tries=1
+      - "@127.0.0.1"
+      - SOA
+      - "{{ bind_dns_domain }}"
+  register: bind_dns_forward_soa
+  changed_when: false
+  retries: 15
+  delay: 2
+  until: >-
+    bind_dns_zone_serial | string
+    in bind_dns_forward_soa.stdout
+
+- name: Wait for the reverse zone to reach the current serial
+  ansible.builtin.command:
+    argv:
+      - dig
+      - +short
+      - +time=3
+      - +tries=1
+      - "@127.0.0.1"
+      - SOA
+      - "{{ bind_dns_reverse_zone }}"
+  register: bind_dns_reverse_soa
+  changed_when: false
+  retries: 15
+  delay: 2
+  until: >-
+    bind_dns_zone_serial | string
+    in bind_dns_reverse_soa.stdout
+
+- name: Check transferred secondary zone files
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - >-
+      {{ bind_dns_secondary_zone_directory }}/{{ bind_dns_domain }}.zone
+    - >-
+      {{ bind_dns_secondary_zone_directory }}/{{ bind_dns_reverse_zone }}.zone
+  register: bind_dns_secondary_zone_files
+  when: bind_dns_server_role == "secondary"
+
+- name: Verify transferred secondary zone files exist
+  ansible.builtin.assert:
+    that:
+      - item.stat.exists
+      - item.stat.size | int > 0
+  loop: "{{ bind_dns_secondary_zone_files.results }}"
+  when: bind_dns_server_role == "secondary"
+
+- name: Verify this DNS server's forward record
+  ansible.builtin.command:
+    argv:
+      - dig
+      - +short
+      - "@127.0.0.1"
+      - A
+      - "{{ bind_dns_validation_fqdn }}"
   register: bind_dns_forward_test
   changed_when: false
   failed_when: >-
     bind_dns_forward_test.stdout | trim
-    !=
-    (bind_dns_listen_ipv4 | reject('equalto', '127.0.0.1') | first)
+    != bind_dns_expected_address
 
-- name: Verify the authoritative reverse record
+- name: Verify this DNS server's reverse record
   ansible.builtin.command:
-    cmd: >-
-      dig +short
-      @127.0.0.1
-      -x
-      {{ bind_dns_listen_ipv4 | reject('equalto', '127.0.0.1') | first }}
+    argv:
+      - dig
+      - +short
+      - "@127.0.0.1"
+      - -x
+      - "{{ bind_dns_expected_address }}"
   register: bind_dns_reverse_test
   changed_when: false
   failed_when: >-
     bind_dns_reverse_test.stdout | trim
-    !=
-    bind_dns_primary_fqdn + '.'
+    != bind_dns_validation_fqdn + '.'
+
+- name: Verify both authoritative name servers
+  ansible.builtin.command:
+    argv:
+      - dig
+      - +short
+      - "@127.0.0.1"
+      - NS
+      - "{{ bind_dns_domain }}"
+  register: bind_dns_ns_test
+  changed_when: false
+  failed_when: >-
+    (bind_dns_nameservers[0] + '.') not in bind_dns_ns_test.stdout_lines or
+    (bind_dns_nameservers[1] + '.') not in bind_dns_ns_test.stdout_lines
 
 - name: Verify external recursive resolution
   ansible.builtin.command:
@@ -169,4 +304,3 @@
   retries: 3
   delay: 2
   until: bind_dns_recursive_test.stdout | trim | length > 0
-

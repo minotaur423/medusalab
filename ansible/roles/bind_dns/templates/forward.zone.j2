@@ -1,14 +1,16 @@
 $TTL {{ bind_dns_default_ttl }}
 
 @   IN  SOA {{ bind_dns_primary_fqdn }}. {{ bind_dns_admin_rname }}. (
-        {{ bind_dns_zone_serial }} ; serial
-        {{ bind_dns_refresh }}     ; refresh
-        {{ bind_dns_retry }}       ; retry
-        {{ bind_dns_expire }}      ; expire
+        {{ bind_dns_zone_serial }}  ; serial
+        {{ bind_dns_refresh }}      ; refresh
+        {{ bind_dns_retry }}        ; retry
+        {{ bind_dns_expire }}       ; expire
         {{ bind_dns_negative_ttl }} ; negative cache TTL
 )
 
-    IN  NS  {{ bind_dns_primary_fqdn }}.
+{% for nameserver in bind_dns_nameservers %}
+    IN  NS  {{ nameserver }}.
+{% endfor %}
 
 {% for record in bind_dns_forward_records %}
 {{ "%-24s" | format(record.name) }} IN  A  {{ record.address }}

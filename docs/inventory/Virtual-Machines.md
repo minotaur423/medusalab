@@ -227,33 +227,35 @@ The `ubuntu-test01` clone successfully demonstrated:
 
 ## `dns01`
 
-| Property               | Value                                                          |
-| ---------------------- | -------------------------------------------------------------- |
-| Lifecycle              | Permanent infrastructure system                                |
-| Operating system       | Red Hat Enterprise Linux 10.2                                  |
-| Architecture           | x86-64                                                         |
-| Location               | `D:\MedusaLab\Lab\VirtualMachines\VMware\Infrastructure\dns01` |
-| Source template        | `tmpl-rhel-10`                                                 |
-| Clone type             | Full clone                                                     |
-| Hostname               | `dns01.medusalab.test`                                         |
-| Management address     | `192.168.141.10/24`                                            |
-| Management Interface   | `ens160` on VMnet1                                             |
-| External Interface     | `ens192` on VMnet8                                             |
-| Default gateway        | `192.168.197.2` through VMnet8                                 |
-| Red Hat registration   | Independently registered                                       |
-| SSH authentication     | MedusaLab ED25519 key                                          |
-| WSL proxy              | `127.0.0.1:2220`                                               |
-| Ansible inventory path | `rhel_managed` → `rhel_infrastructure` → `dns_servers`         |
-| RHEL baseline          | Applied and idempotent                                         |
-| Infrastructure role    | Internal authoritative and recursive                           |
-| DNS software	         | BIND                                                           |
-| Forward zone	         | medusalab.test                                                 |
-| Reverse zone	         | 141.168.192.in-addr.arpa                                       |
-| Current state          | Active                                                         |
+| Property               | Value                                                                    |
+| ---------------------- | ------------------------------------------------------------------------ |
+| Lifecycle              | Permanent infrastructure system                                          |
+| Operating system       | Red Hat Enterprise Linux 10.2                                            |
+| Architecture           | x86-64                                                                   |
+| Location               | `D:\MedusaLab\Lab\VirtualMachines\VMware\Infrastructure\dns01`           |
+| Source template        | `tmpl-rhel-10`                                                           |
+| Clone type             | Full clone                                                               |
+| Hostname               | `dns01.medusalab.test`                                                   |
+| Management address     | `192.168.141.10/24`                                                      |
+| Management Interface   | `ens160` on VMnet1                                                       |
+| External Interface     | `ens192` on VMnet8                                                       |
+| Default gateway        | `192.168.197.2` through VMnet8                                           |
+| Red Hat registration   | Independently registered                                                 |
+| SSH authentication     | MedusaLab ED25519 key                                                    |
+| WSL proxy              | `127.0.0.1:2220`                                                         |
+| Ansible inventory path | `rhel_managed` → `rhel_infrastructure` → `dns_servers` → `dns_primaries` |
+| RHEL baseline          | Applied and idempotent                                                   |
+| Infrastructure role    | Primary authoritative and recursive DNS                                  |
+| Secondary DNS server   | `dns02.medusalab.test`                                                   |
+| DNS software	         | BIND                                                                     |
+| Forward zone	         | medusalab.test                                                           |
+| Reverse zone	         | 141.168.192.in-addr.arpa                                                 |
+| Zone transfer security | TSIG-authenticated to dns02                                              |
+| Current state          | Active                                                                   |
 
 ### Validation Results
 
-The dns01 deployment successfully demonstrated:
+The `dns01` deployment successfully demonstrated:
 
 * Unique machine identity and SSH server host keys
 * Independent Red Hat registration
@@ -271,6 +273,56 @@ The dns01 deployment successfully demonstrated:
 * Ubuntu client integration
 * Windows NRPT integration
 * WSL DNS-tunneling integration
+* Ansible idempotence
+
+## `dns02`
+
+| Property	             | Value                                                                      |
+| ---------------------- | -------------------------------------------------------------------------- |
+| Lifecycle	             | Permanent infrastructure system                                            |
+| Operating system	     | Red Hat Enterprise Linux 10.2                                              |
+| Architecture	         | x86-64                                                                     |
+| Location	             | `D:\MedusaLab\Lab\VirtualMachines\VMware\Infrastructure\dns02`             |
+| Source template	     | `tmpl-rhel-10`                                                             |
+| Clone type	         | Full clone                                                                 |
+| Hostname	             | `dns02.medusalab.test`                                                     |
+| Management address     | `192.168.141.11/24`                                                        |
+| Management interface   | `ens160` on VMnet1                                                         |
+| External interface     | `ens192` on VMnet8                                                         |
+| Default gateway        | `192.168.197.2` through VMnet8                                             |
+| Red Hat registration	 | Independently registered                                                   |
+| SSH authentication	 | MedusaLab ED25519 key                                                      |
+| WSL proxy	             | `127.0.0.1:2221`                                                           |
+| Ansible inventory path | `rhel_managed` → `rhel_infrastructure` → `dns_servers` → `dns_secondaries` |
+| RHEL baseline	         | Applied and idempotent                                                     |
+| Infrastructure role	 | Secondary authoritative and recursive DNS                                  |
+| Primary DNS server     | `dns01.medusalab.test`                                                     |
+| Forward zone           | `medusalab.test`                                                           |
+| Reverse zone           | `141.168.192.in-addr.arpa`                                                 |
+| Zone transfer security | TSIG using encrypted Ansible Vault variable                                |
+| Current state	         | Active                                                                     |
+
+### Validation Results
+
+The `dns02` deployment successfully demonstrated:
+
+* Unique machine identity and SSH server host keys
+* Independent Red Hat registration
+* Static VMnet1 management addressing
+* VMnet8 DHCP and outbound connectivity
+* WSL SSH access through Windows TCP proxy port `2221`
+* Successful RHEL baseline automation
+* Successful BIND secondary-server deployment
+* TSIG-authenticated forward-zone transfer
+* TSIG-authenticated reverse-zone transfer
+* Matching primary and secondary SOA serials
+* Authoritative forward and reverse responses
+* Restricted recursive DNS
+* External name resolution
+* Linux dual-resolver integration
+* Windows dual-server NRPT integration
+* WSL dual-server integration
+* Successful primary DNS failover validation
 * Ansible idempotence
 
 # Lifecycle Policy

@@ -6,18 +6,38 @@ This runbook documents the operation, validation, modification, and recovery of 
 
 ## Service Summary
 
-| Property               | Value                         |
-| ---------------------- | ----------------------------- |
-| Server                 | `dns01.medusalab.test`        |
-| Operating system       | Red Hat Enterprise Linux 10.2 |
-| Management address     | `192.168.141.10/24`           |
-| DNS software           | BIND                          |
-| Service                | `named`                       |
-| Forward zone           | `medusalab.test`              |
-| Reverse zone           | `141.168.192.in-addr.arpa`    |
-| Trusted client network | `192.168.141.0/24`            |
-| WSL SSH alias          | `dns01`                       |
-| Windows SSH proxy      | `127.0.0.1:2220`              |
+| Property                 | Value                         |
+| ------------------------ | ----------------------------- |
+| Primary Server           | `dns01.medusalab.test`        |
+| Primary Address          | `192.168.141.10/24`           |
+| Secondary Server         | `dns02.medusalab.test`        |
+| Secondary Address        | `192.168.141.11/24`           |
+| Operating system         | Red Hat Enterprise Linux 10.2 |
+| DNS software             | BIND                          |
+| Service                  | `named`                       |
+| Forward zone             | `medusalab.test`              |
+| Reverse zone             | `141.168.192.in-addr.arpa`    |
+| Trusted client network   | `192.168.141.0/24`            |
+| Primary WSL SSH alias    | `dns01`                       |
+| Primary WSL SSH proxy    | `127.0.0.1:2220`              |
+| Secondary WSL SSH alias  | `dns02`                       |
+| Secondary WSL SSH proxy  | `127.0.0.1:2221`              |
+
+## High-Availability Operations
+
+The detailed primary/secondary architecture, zone-transfer procedure, failover testing, and recovery workflow are documented in:
+
+docs/runbooks/DNS-High-Availability.md
+
+Replace any statement identifying dns01 as the only DNS server or a single point of failure.
+
+Replace the existing limitation section with:
+
+## Availability Limitation
+
+MedusaLab now has redundant authoritative and recursive DNS virtual machines.
+
+Both DNS servers currently reside on the same physical Windows host and VMware platform. DNS therefore tolerates a single DNS virtual-machine or named service failure, but it does not tolerate a complete MEDUSA or VMware Workstation outage.
 
 ## Managed Repository Components
 
