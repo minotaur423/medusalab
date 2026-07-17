@@ -1,0 +1,3 @@
+---
+dns_client_rhel_management_connection: vmnet1-mgmt
+dns_client_rhel_external_connection: ens192

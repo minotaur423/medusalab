@@ -1,0 +1,25 @@
+---
+- name: Reactivate RHEL management connection
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - connection
+      - up
+      - "{{ dns_client_rhel_management_connection }}"
+  changed_when: true
+
+- name: Reactivate RHEL external connection
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - connection
+      - up
+      - "{{ dns_client_rhel_external_connection }}"
+  changed_when: true
+
+- name: Apply Ubuntu Netplan
+  ansible.builtin.command:
+    argv:
+      - netplan
+      - apply
+  changed_when: true

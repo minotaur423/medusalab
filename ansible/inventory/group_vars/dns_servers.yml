@@ -1,0 +1,45 @@
+---
+bind_dns_listen_ipv4:
+  - 127.0.0.1
+  - 192.168.141.10
+
+bind_dns_allowed_networks:
+  - 127.0.0.1
+  - 192.168.141.0/24
+
+bind_dns_forwarders:
+  - 1.1.1.1
+  - 1.0.0.1
+
+bind_dns_forward_only: false
+
+bind_dns_domain: medusalab.test
+bind_dns_reverse_zone: 141.168.192.in-addr.arpa
+
+bind_dns_primary_fqdn: dns01.medusalab.test
+bind_dns_admin_rname: hostmaster.medusalab.test
+
+bind_dns_zone_serial: 2026071601
+
+bind_dns_forward_records:
+  - name: "@"
+    address: 192.168.141.10
+
+  - name: dns01
+    address: 192.168.141.10
+
+  - name: rhel10-test01
+    address: 192.168.141.20
+
+  - name: ubuntu-test01
+    address: 192.168.141.21
+
+bind_dns_reverse_records:
+  - octet: 10
+    fqdn: dns01.medusalab.test
+
+  - octet: 20
+    fqdn: rhel10-test01.medusalab.test
+
+  - octet: 21
+    fqdn: ubuntu-test01.medusalab.test

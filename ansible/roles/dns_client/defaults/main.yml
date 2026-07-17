@@ -1,0 +1,10 @@
+---
+dns_client_server: 192.168.141.10
+dns_client_domain: medusalab.test
+dns_client_test_name: dns01.medusalab.test
+dns_client_expected_address: 192.168.141.10
+
+dns_client_rhel_management_dns_priority: 10
+dns_client_rhel_external_dns_priority: 100
+
+dns_client_ubuntu_netplan_path: /etc/netplan/01-medusalab.yaml

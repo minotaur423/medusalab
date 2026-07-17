@@ -1,0 +1,47 @@
+---
+- name: Verify supported DNS client platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution in ["RedHat", "Ubuntu"]
+    fail_msg: >-
+      The dns_client role currently supports RHEL and Ubuntu.
+
+- name: Verify common DNS client variables
+  ansible.builtin.assert:
+    that:
+      - dns_client_server | length > 0
+      - dns_client_domain | length > 0
+      - dns_client_test_name | length > 0
+      - dns_client_expected_address | length > 0
+
+- name: Configure the RHEL DNS client
+  ansible.builtin.include_tasks: redhat.yml
+  when: ansible_facts.distribution == "RedHat"
+
+- name: Configure the Ubuntu DNS client
+  ansible.builtin.include_tasks: ubuntu.yml
+  when: ansible_facts.distribution == "Ubuntu"
+
+- name: Resolve the MedusaLab DNS server
+  ansible.builtin.command:
+    argv:
+      - getent
+      - ahostsv4
+      - "{{ dns_client_test_name }}"
+  register: dns_client_internal_test
+  changed_when: false
+  failed_when: >-
+    dns_client_internal_test.rc != 0 or
+    dns_client_expected_address not in dns_client_internal_test.stdout
+
+- name: Resolve an external name
+  ansible.builtin.command:
+    argv:
+      - getent
+      - ahostsv4
+      - www.redhat.com
+  register: dns_client_external_test
+  changed_when: false
+  failed_when: >-
+    dns_client_external_test.rc != 0 or
+    dns_client_external_test.stdout | trim | length == 0

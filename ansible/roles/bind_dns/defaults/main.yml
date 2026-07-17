@@ -1,0 +1,36 @@
+---
+bind_dns_packages:
+  - bind
+  - bind-utils
+
+bind_dns_service: named
+bind_dns_firewall_zone: public
+
+bind_dns_config_path: /etc/named.conf
+bind_dns_zone_directory: /var/named
+
+bind_dns_listen_ipv4:
+  - 127.0.0.1
+
+bind_dns_allowed_networks:
+  - 127.0.0.1
+
+bind_dns_forwarders: []
+bind_dns_forward_only: true
+
+bind_dns_domain: ""
+bind_dns_reverse_zone: ""
+bind_dns_primary_fqdn: ""
+bind_dns_admin_rname: ""
+
+bind_dns_zone_serial: 1
+bind_dns_default_ttl: 1h
+bind_dns_refresh: 1h
+bind_dns_retry: 15m
+bind_dns_expire: 1w
+bind_dns_negative_ttl: 1h
+
+bind_dns_forward_records: []
+bind_dns_reverse_records: []
+
+bind_dns_external_test_name: www.redhat.com

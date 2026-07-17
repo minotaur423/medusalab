@@ -1,0 +1,8 @@
+---
+- name: Configure MedusaLab DNS clients
+  hosts: rhel_sandbox:ubuntu_sandbox
+  become: true
+  gather_facts: true
+
+  roles:
+    - dns_client

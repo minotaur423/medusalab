@@ -1,0 +1,26 @@
+---
+- name: Verify Ubuntu DNS variables
+  ansible.builtin.assert:
+    that:
+      - dns_client_ubuntu_management_interface | length > 0
+      - dns_client_ubuntu_external_interface | length > 0
+      - dns_client_ubuntu_management_address | length > 0
+
+- name: Deploy the Ubuntu Netplan configuration
+  ansible.builtin.template:
+    src: ubuntu-netplan.yaml.j2
+    dest: "{{ dns_client_ubuntu_netplan_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Apply Ubuntu Netplan
+
+- name: Validate the Ubuntu Netplan configuration
+  ansible.builtin.command:
+    argv:
+      - netplan
+      - generate
+  changed_when: false
+
+- name: Apply pending Ubuntu network changes
+  ansible.builtin.meta: flush_handlers

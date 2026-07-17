@@ -116,18 +116,33 @@
 * Ubuntu golden-image runbook created
 * Virtual-machine inventory updated
 * Static IP and SSH proxy allocations updated
+* Permanent RHEL infrastructure VM dns01 created
+* dns01 static management identity configured
+* dns01 independently registered with Red Hat
+* dns01 enrolled in the managed RHEL Ansible inventory
+* RHEL baseline applied idempotently to dns01
+* Reusable bind_dns Ansible role created
+* BIND authoritative DNS service deployed
+* Internal namespace medusalab.test established
+* Reverse zone 141.168.192.in-addr.arpa established
+* Forward and reverse zone validation completed
+* Restricted recursive DNS configured
+* External forwarders and fallback recursion validated
+* DNS enabled through firewalld
+* SELinux-enforcing BIND operation validated
+* Reusable dns_client Ansible role created
+* RHEL DNS-client configuration automated
+* Ubuntu DNS-client configuration automated
+* Windows NRPT split-DNS rule configured
+* WSL DNS tunneling validated
+* Cross-platform internal and external DNS resolution validated
+* Internal DNS ADR and operational runbook created
 
 ### Next
 
-* Create the first permanent infrastructure VM, `dns01`
-* Assign `dns01` the VMnet1 address `192.168.141.10/24`
-* Establish WSL SSH access on port `2220`
-* Add `dns01` to the managed RHEL Ansible inventory
-* Define the MedusaLab internal DNS namespace
-* Install and configure the internal DNS service
-* Create forward and reverse DNS zones
-* Configure infrastructure systems to use internal DNS
-* Validate name resolution from Windows, WSL, RHEL, and Ubuntu
-* Document DNS operations and recovery procedures
-* Retire or repurpose the golden-image validation clones
-
+* Add new infrastructure records through the managed DNS zones
+* Deploy a secondary internal DNS server
+* Add automated DNS availability monitoring
+* Automate Windows NRPT configuration
+* Evaluate the next permanent infrastructure service
+* Retire or repurpose the golden-image validation systems when no longer required

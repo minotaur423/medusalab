@@ -1,0 +1,5 @@
+---
+dns_client_ubuntu_management_interface: ens33
+dns_client_ubuntu_external_interface: ens34
+dns_client_ubuntu_management_address: 192.168.141.21/24
+dns_client_ubuntu_netplan_path: /etc/netplan/01-medusalab.yaml

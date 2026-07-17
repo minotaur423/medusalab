@@ -67,7 +67,7 @@ VMnet8 addresses are normally dynamic and are therefore not included in the stat
 | Address          | Hostname        | Platform       | Purpose                               | Lifecycle status  |
 | ---------------- | --------------- | -------------- | ------------------------------------- | ----------------- |
 | `192.168.141.1`  | `MEDUSA`        | Windows 11     | VMware VMnet1 host adapter            | System assigned   |
-| `192.168.141.10` | `dns01`         | RHEL 10        | Permanent internal DNS infrastructure | Reserved          |
+| `192.168.141.10` | `dns01`         | RHEL 10        | Permanent internal DNS infrastructure | Active            |
 | `192.168.141.20` | `rhel10-test01` | RHEL 10.2      | RHEL golden-image validation          | Active validation |
 | `192.168.141.21` | `ubuntu-test01` | Ubuntu 24.04.4 | Ubuntu golden-image validation        | Active validation |
 
@@ -85,7 +85,7 @@ VMnet8 addresses are normally dynamic and are therefore not included in the stat
 | VMware management network | VMnet1                        |
 | External network          | VMnet8 using DHCP             |
 | WSL SSH proxy             | `127.0.0.1:2220`              |
-| Status                    | Reserved; not yet deployed    |
+| Status                    | Active                        |
 
 The address and proxy port must not be assigned to another system while `dns01` remains planned.
 
@@ -125,7 +125,7 @@ Windows TCP port proxies provide access from WSL to VMnet1 SSH services.
 | ---------------------- | ----------: | ------------------- | --------------- | -------------------------------------- |
 | `127.0.0.1`            |      `2211` | `192.168.141.20:22` | `rhel10-test01` | Active while validation VM is retained |
 | `127.0.0.1`            |      `2213` | `192.168.141.21:22` | `ubuntu-test01` | Active while validation VM is retained |
-| `127.0.0.1`            |      `2220` | `192.168.141.10:22` | `dns01`         | Reserved                               |
+| `127.0.0.1`            |      `2220` | `192.168.141.10:22` | `dns01`         | Active                                 |
 
 The proxy register must be updated whenever:
 
@@ -184,4 +184,20 @@ The following templates therefore do not appear in the static assignment table:
 | Reserved permanent infrastructure addresses |           1 |
 | Active validation addresses                 |           2 |
 | Active or reserved WSL proxy ports          |           3 |
+
+## Internal DNS Namespace
+
+| Property	            | Value                                |
+| --------------------- | ------------------------------------ |
+| DNS server	        | `dns01.medusalab.test`               |
+| DNS address	        | `192.168.141.10`                     |
+| Forward zone	        | `medusalab.test`                     |
+| Reverse zone	        | `141.168.192.in-addr.arpa`           |
+| Trusted network	    | `192.168.141.0/24`                   |
+| External forwarding	| `1.1.1.1`, `1.0.0.1`                 |
+| Forwarding policy	    | Forward first                        |
+| Windows integration   | NRPT rule for `.medusalab.test`      |
+| WSL integration	    | Windows DNS path with DNS tunneling  |
+
+The VMnet8 address 192.168.197.2 is the VMware NAT gateway. It must not be documented as a guaranteed recursive DNS resolver.
 

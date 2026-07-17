@@ -1,0 +1,172 @@
+---
+- name: Verify supported DNS platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == "RedHat"
+      - ansible_facts.distribution_major_version | int >= 10
+    fail_msg: >-
+      The bind_dns role currently supports Red Hat Enterprise Linux 10
+      or later.
+
+- name: Verify required DNS variables
+  ansible.builtin.assert:
+    that:
+      - bind_dns_domain | length > 0
+      - bind_dns_reverse_zone | length > 0
+      - bind_dns_primary_fqdn | length > 0
+      - bind_dns_admin_rname | length > 0
+      - bind_dns_listen_ipv4 | length > 0
+      - bind_dns_allowed_networks | length > 0
+      - bind_dns_forward_records | length > 0
+      - bind_dns_reverse_records | length > 0
+    fail_msg: >-
+      One or more required bind_dns variables are missing.
+
+- name: Verify SELinux is enforcing
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.selinux.status == "enabled"
+      - ansible_facts.selinux.mode == "enforcing"
+    fail_msg: >-
+      The MedusaLab DNS standard requires SELinux to be enabled
+      and enforcing.
+
+- name: Install BIND packages
+  ansible.builtin.dnf:
+    name: "{{ bind_dns_packages }}"
+    state: present
+
+- name: Ensure firewalld is enabled and running
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: Check for the RHEL BIND crypto-policy configuration
+  ansible.builtin.stat:
+    path: /etc/crypto-policies/back-ends/bind.config
+  register: bind_dns_crypto_policy
+
+- name: Deploy the BIND configuration
+  ansible.builtin.template:
+    src: named.conf.j2
+    dest: "{{ bind_dns_config_path }}"
+    owner: root
+    group: named
+    mode: "0640"
+    validate: named-checkconf %s
+  notify: Reload named
+
+- name: Deploy the forward DNS zone
+  ansible.builtin.template:
+    src: forward.zone.j2
+    dest: >-
+      {{ bind_dns_zone_directory }}/{{ bind_dns_domain }}.zone
+    owner: root
+    group: named
+    mode: "0640"
+    validate: >-
+      named-checkzone {{ bind_dns_domain }} %s
+  notify: Reload named
+
+- name: Deploy the reverse DNS zone
+  ansible.builtin.template:
+    src: reverse.zone.j2
+    dest: >-
+      {{ bind_dns_zone_directory }}/{{ bind_dns_reverse_zone }}.zone
+    owner: root
+    group: named
+    mode: "0640"
+    validate: >-
+      named-checkzone {{ bind_dns_reverse_zone }} %s
+  notify: Reload named
+
+- name: Restore SELinux contexts on BIND files
+  ansible.builtin.command:
+    cmd: "restorecon -v {{ item }}"
+  loop:
+    - "{{ bind_dns_config_path }}"
+    - "{{ bind_dns_zone_directory }}/{{ bind_dns_domain }}.zone"
+    - >-
+      {{ bind_dns_zone_directory }}/{{ bind_dns_reverse_zone }}.zone
+  changed_when: false
+
+- name: Validate the complete BIND configuration and zones
+  ansible.builtin.command:
+    cmd: named-checkconf -z "{{ bind_dns_config_path }}"
+  changed_when: false
+
+- name: Check whether DNS is enabled in firewalld
+  ansible.builtin.command:
+    cmd: >-
+      firewall-cmd
+      --permanent
+      --zone={{ bind_dns_firewall_zone }}
+      --query-service=dns
+  register: bind_dns_firewall_query
+  changed_when: false
+  failed_when: bind_dns_firewall_query.rc not in [0, 1]
+
+- name: Enable DNS in firewalld
+  ansible.builtin.command:
+    cmd: >-
+      firewall-cmd
+      --permanent
+      --zone={{ bind_dns_firewall_zone }}
+      --add-service=dns
+  when: bind_dns_firewall_query.rc == 1
+  notify: Reload firewalld
+
+- name: Enable and start BIND
+  ansible.builtin.service:
+    name: "{{ bind_dns_service }}"
+    state: started
+    enabled: true
+
+- name: Apply pending BIND and firewall handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify the authoritative forward record
+  ansible.builtin.command:
+    cmd: >-
+      dig +short
+      @127.0.0.1
+      A
+      {{ bind_dns_primary_fqdn }}
+  register: bind_dns_forward_test
+  changed_when: false
+  failed_when: >-
+    bind_dns_forward_test.stdout | trim
+    !=
+    (bind_dns_listen_ipv4 | reject('equalto', '127.0.0.1') | first)
+
+- name: Verify the authoritative reverse record
+  ansible.builtin.command:
+    cmd: >-
+      dig +short
+      @127.0.0.1
+      -x
+      {{ bind_dns_listen_ipv4 | reject('equalto', '127.0.0.1') | first }}
+  register: bind_dns_reverse_test
+  changed_when: false
+  failed_when: >-
+    bind_dns_reverse_test.stdout | trim
+    !=
+    bind_dns_primary_fqdn + '.'
+
+- name: Verify external recursive resolution
+  ansible.builtin.command:
+    argv:
+      - dig
+      - +short
+      - +time=5
+      - +tries=1
+      - "@127.0.0.1"
+      - A
+      - "{{ bind_dns_external_test_name }}"
+  register: bind_dns_recursive_test
+  changed_when: false
+  retries: 3
+  delay: 2
+  until: bind_dns_recursive_test.stdout | trim | length > 0
+

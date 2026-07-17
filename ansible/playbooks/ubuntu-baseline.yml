@@ -1,0 +1,8 @@
+---
+- name: Configure managed Ubuntu systems
+  hosts: ubuntu_managed
+  become: true
+  gather_facts: true
+
+  roles:
+    - ubuntu_baseline

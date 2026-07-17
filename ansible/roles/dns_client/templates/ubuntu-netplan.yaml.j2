@@ -1,0 +1,24 @@
+# Managed by Ansible.
+# Manual changes will be overwritten.
+
+network:
+  version: 2
+  renderer: networkd
+
+  ethernets:
+    {{ dns_client_ubuntu_management_interface }}:
+      dhcp4: false
+      addresses:
+        - {{ dns_client_ubuntu_management_address }}
+      nameservers:
+        addresses:
+          - {{ dns_client_server }}
+        search:
+          - {{ dns_client_domain }}
+      optional: true
+
+    {{ dns_client_ubuntu_external_interface }}:
+      dhcp4: true
+      dhcp4-overrides:
+        route-metric: 100
+      optional: true

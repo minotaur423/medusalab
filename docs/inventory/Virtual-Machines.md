@@ -223,23 +223,55 @@ The `ubuntu-test01` clone successfully demonstrated:
 * Successful application of the Ubuntu baseline
 * Idempotent second Ansible execution with no changes
 
-# Planned Infrastructure Systems
+# Infrastructure Systems
 
 ## `dns01`
 
-| Property           | Planned value                                                  |
-| ------------------ | -------------------------------------------------------------- |
-| Lifecycle          | Permanent infrastructure system                                |
-| Operating system   | Red Hat Enterprise Linux 10.2                                  |
-| Source template    | `tmpl-rhel-10`                                                 |
-| Clone type         | Full clone                                                     |
-| Location           | `D:\MedusaLab\Lab\VirtualMachines\VMware\Infrastructure\dns01` |
-| Hostname           | `dns01`                                                        |
-| Management address | `192.168.141.10/24`                                            |
-| External network   | VMnet8 DHCP                                                    |
-| WSL proxy          | `127.0.0.1:2220`                                               |
-| Planned role       | Internal DNS                                                   |
-| Current state      | Reserved; not yet deployed                                     |
+| Property               | Value                                                          |
+| ---------------------- | -------------------------------------------------------------- |
+| Lifecycle              | Permanent infrastructure system                                |
+| Operating system       | Red Hat Enterprise Linux 10.2                                  |
+| Architecture           | x86-64                                                         |
+| Location               | `D:\MedusaLab\Lab\VirtualMachines\VMware\Infrastructure\dns01` |
+| Source template        | `tmpl-rhel-10`                                                 |
+| Clone type             | Full clone                                                     |
+| Hostname               | `dns01.medusalab.test`                                         |
+| Management address     | `192.168.141.10/24`                                            |
+| Management Interface   | `ens160` on VMnet1                                             |
+| External Interface     | `ens192` on VMnet8                                             |
+| Default gateway        | `192.168.197.2` through VMnet8                                 |
+| Red Hat registration   | Independently registered                                       |
+| SSH authentication     | MedusaLab ED25519 key                                          |
+| WSL proxy              | `127.0.0.1:2220`                                               |
+| Ansible inventory path | `rhel_managed` → `rhel_infrastructure` → `dns_servers`         |
+| RHEL baseline          | Applied and idempotent                                         |
+| Infrastructure role    | Internal authoritative and recursive                           |
+| DNS software	         | BIND                                                           |
+| Forward zone	         | medusalab.test                                                 |
+| Reverse zone	         | 141.168.192.in-addr.arpa                                       |
+| Current state          | Active                                                         |
+
+### Validation Results
+
+The dns01 deployment successfully demonstrated:
+
+* Unique machine identity and SSH server host keys
+* Independent Red Hat registration
+* Static VMnet1 management addressing
+* VMnet8 DHCP and outbound connectivity
+* WSL SSH access through Windows TCP proxy port 2220
+* Successful RHEL baseline automation
+* Successful BIND installation and configuration
+* SELinux-enforcing operation
+* Firewalld DNS access
+* Valid forward and reverse zones
+* Restricted recursive DNS
+* External name resolution
+* RHEL client integration
+* Ubuntu client integration
+* Windows NRPT integration
+* WSL DNS-tunneling integration
+* Ansible idempotence
 
 # Lifecycle Policy
 

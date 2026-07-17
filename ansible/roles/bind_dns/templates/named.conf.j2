@@ -1,0 +1,93 @@
+// Managed by Ansible.
+// Manual changes will be overwritten.
+
+acl "medusalab-clients" {
+{% for network in bind_dns_allowed_networks %}
+    {{ network }};
+{% endfor %}
+};
+
+options {
+    listen-on port 53 {
+{% for address in bind_dns_listen_ipv4 %}
+        {{ address }};
+{% endfor %}
+    };
+
+    listen-on-v6 port 53 { none; };
+
+    directory "/var/named";
+
+    dump-file "/var/named/data/cache_dump.db";
+    statistics-file "/var/named/data/named_stats.txt";
+    memstatistics-file "/var/named/data/named_mem_stats.txt";
+    secroots-file "/var/named/data/named.secroots";
+    recursing-file "/var/named/data/named.recursing";
+
+    allow-query {
+        medusalab-clients;
+    };
+
+    allow-recursion {
+        medusalab-clients;
+    };
+
+    recursion yes;
+
+{% if bind_dns_forwarders | length > 0 %}
+    forwarders {
+{% for forwarder in bind_dns_forwarders %}
+        {{ forwarder }};
+{% endfor %}
+    };
+
+{% if bind_dns_forward_only %}
+    forward only;
+{% else %}
+    forward first;
+{% endif %}
+{% endif %}
+
+    dnssec-validation auto;
+    minimal-responses yes;
+
+    managed-keys-directory "/var/named/dynamic";
+    pid-file "/run/named/named.pid";
+    session-keyfile "/run/named/session.key";
+
+{% if bind_dns_crypto_policy.stat.exists %}
+    include "/etc/crypto-policies/back-ends/bind.config";
+{% endif %}
+};
+
+zone "." IN {
+    type hint;
+    file "named.ca";
+};
+
+zone "{{ bind_dns_domain }}" IN {
+    type master;
+    file "{{ bind_dns_domain }}.zone";
+    allow-query {
+        medusalab-clients;
+    };
+    allow-transfer {
+        none;
+    };
+    notify no;
+};
+
+zone "{{ bind_dns_reverse_zone }}" IN {
+    type master;
+    file "{{ bind_dns_reverse_zone }}.zone";
+    allow-query {
+        medusalab-clients;
+    };
+    allow-transfer {
+        none;
+    };
+    notify no;
+};
+
+include "/etc/named.rfc1912.zones";
+include "/etc/named.root.key";
