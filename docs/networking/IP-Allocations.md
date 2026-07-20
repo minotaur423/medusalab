@@ -69,6 +69,7 @@ VMnet8 addresses are normally dynamic and are therefore not included in the stat
 | `192.168.141.1`  | `MEDUSA`        | Windows 11     | VMware VMnet1 host adapter            | System assigned   |
 | `192.168.141.10` | `dns01`         | RHEL 10        | Primary internal DNS infrastructure   | Active            |
 | `192.168.141.11` | `dns02`         | RHEL 10        | Secondary internal DNS infrastructure | Active            |
+| `192.168.141.12` | `vault01`       | RHEL 10.2      | HashiCorp Vault security platform     | Active            |
 | `192.168.141.20` | `rhel10-test01` | RHEL 10.2      | RHEL golden-image validation          | Active validation |
 | `192.168.141.21` | `ubuntu-test01` | Ubuntu 24.04.4 | Ubuntu golden-image validation        | Active validation |
 
@@ -128,6 +129,7 @@ Windows TCP port proxies provide access from WSL to VMnet1 SSH services.
 | `127.0.0.1`            |      `2213` | `192.168.141.21:22` | `ubuntu-test01` | Active while validation VM is retained |
 | `127.0.0.1`            |      `2220` | `192.168.141.10:22` | `dns01`         | Active                                 |
 | `127.0.0.1`            |      `2221` | `192.168.141.11:22` | `dns02`         | Active                                 |
+| `127.0.0.1`            |      `2222` | `192.168.141.12:22` | `vault01`       | Active                                 |
 
 The proxy register must be updated whenever:
 
@@ -207,4 +209,14 @@ The following templates therefore do not appear in the static assignment table:
 | Failover Validation    | Passed                                             |
 
 The VMnet8 address 192.168.197.2 is the VMware NAT gateway. It must not be documented as a guaranteed recursive DNS resolver.
+
+## Vault Network Services
+| Service	    | Address           | Port        | Exposure             |
+| ------------- | ----------------- | ----------- | -------------------- |
+| Vault API	    | 192.168.141.12    | TCP 8200    | VMnet1 clients only  |
+| Vault cluster	| 192.168.141.12    | TCP 8201    | VMnet1 clients only  |
+| Cockpit	    | 192.168.141.12    | TCP 9090    | RHEL management      |
+| SSH	        | 192.168.141.12    | TCP 22      | Management           |
+
+Vault is not bound to the VMnet8 interface.
 

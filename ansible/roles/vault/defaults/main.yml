@@ -1,0 +1,50 @@
+---
+vault_package_name: vault
+
+vault_server_fqdn: "{{ inventory_hostname }}"
+vault_server_short_name: "{{ inventory_hostname_short }}"
+vault_server_ipv4: ""
+
+vault_cluster_name: medusalab-vault
+vault_raft_node_id: "{{ inventory_hostname_short }}"
+
+vault_api_port: 8200
+vault_cluster_port: 8201
+
+vault_config_dir: /etc/vault.d
+vault_config_path: /etc/vault.d/vault.hcl
+vault_data_dir: /opt/vault/data
+vault_tls_dir: /opt/vault/tls
+
+vault_tls_cert_path: /opt/vault/tls/vault-cert.pem
+vault_tls_key_path: /opt/vault/tls/vault-key.pem
+vault_tls_trust_path: /etc/pki/ca-trust/source/anchors/medusalab-vault-bootstrap.pem
+vault_tls_validity_days: 365
+
+vault_firewall_zone: public
+vault_firewall_source_ipv4: 192.168.141.0/24
+
+vault_firewall_rules:
+  - >-
+    rule family="ipv4"
+    source address="{{ vault_firewall_source_ipv4 }}"
+    port port="{{ vault_api_port }}" protocol="tcp"
+    accept
+  - >-
+    rule family="ipv4"
+    source address="{{ vault_firewall_source_ipv4 }}"
+    port port="{{ vault_cluster_port }}" protocol="tcp"
+    accept
+
+vault_audit_device_name: file
+vault_audit_log_dir: /var/log/vault
+vault_audit_log_path: /var/log/vault/audit.log
+vault_audit_log_rotate_count: 30
+vault_audit_logrotate_path: /etc/logrotate.d/vault-audit
+
+vault_policy_dir: /etc/vault.d/policies
+vault_admin_policy_name: medusalab-admin
+vault_admin_policy_path: /etc/vault.d/policies/medusalab-admin.hcl
+
+vault_cli_user: minotaur423
+vault_cli_home: /home/minotaur423

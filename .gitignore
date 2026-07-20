@@ -21,3 +21,13 @@ desktop.ini
 
 # Logs
 *.log
+
+# HashiCorp Vault local credentials and initialization material
+.vault-token
+**/.vault-token
+.vault-secrets/
+**/.vault-secrets/
+vault01-init-*.json
+vault01-init-*.json.enc
+vault01-init-*.json.enc.sha256
+*.raft.snap

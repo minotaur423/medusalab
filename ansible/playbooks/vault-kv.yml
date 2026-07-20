@@ -1,0 +1,230 @@
+---
+- name: Configure MedusaLab versioned secrets
+  hosts: vault_servers
+  gather_facts: false
+  become: false
+
+  vars:
+    vault_cli_environment:
+      HOME: "{{ vault_cli_home }}"
+      VAULT_ADDR: "https://{{ vault_server_fqdn }}:{{ vault_api_port }}"
+      VAULT_CACERT: "{{ vault_tls_trust_path }}"
+
+  tasks:
+    - name: Verify the cached Vault administrator token
+      ansible.builtin.command:
+        argv:
+          - vault
+          - token
+          - lookup
+          - -format=json
+      environment: "{{ vault_cli_environment }}"
+      register: vault_kv_admin_token
+      changed_when: false
+      no_log: true
+
+    - name: Verify administrator access
+      ansible.builtin.assert:
+        that:
+          - >-
+            vault_admin_policy_name in
+            (vault_kv_admin_token.stdout | from_json).data.policies
+        fail_msg: >-
+          The cached Vault token does not have the medusalab-admin
+          policy. Log in on vault01 using the userpass administrator.
+
+    - name: Create the Vault policy directory
+      become: true
+      ansible.builtin.file:
+        path: "{{ vault_policy_dir }}"
+        state: directory
+        owner: root
+        group: vault
+        mode: "0750"
+
+    - name: Deploy KV policy definitions
+      become: true
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: root
+        group: vault
+        mode: "0640"
+      loop:
+        - src: >-
+            {{ playbook_dir }}/../roles/vault/files/medusalab-secrets-operator.hcl
+          dest: "{{ vault_secrets_operator_policy_path }}"
+
+        - src: >-
+            {{ playbook_dir }}/../roles/vault/files/medusalab-demo-app.hcl
+          dest: "{{ vault_demo_app_policy_path }}"
+
+    - name: Read enabled secrets engines
+      ansible.builtin.command:
+        argv:
+          - vault
+          - secrets
+          - list
+          - -format=json
+      environment: "{{ vault_cli_environment }}"
+      register: vault_kv_mounts
+      changed_when: false
+
+    - name: Store existing KV mount information
+      ansible.builtin.set_fact:
+        vault_existing_kv_mount: >-
+          {{
+            (vault_kv_mounts.stdout | from_json).get(
+              vault_kv_mount_path + '/',
+              {}
+            )
+          }}
+
+    - name: Verify an existing mount is KV version 2
+      ansible.builtin.assert:
+        that:
+          - vault_existing_kv_mount.get("type", "") == "kv"
+          - >-
+            vault_existing_kv_mount.get("options", {}).get(
+              "version",
+              ""
+            ) == "2"
+        fail_msg: >-
+          The existing mount at {{ vault_kv_mount_path }}/ is not
+          a KV version 2 secrets engine.
+      when: vault_existing_kv_mount | length > 0
+
+    - name: Enable the KV version 2 secrets engine
+      ansible.builtin.command:
+        argv:
+          - vault
+          - secrets
+          - enable
+          - "-path={{ vault_kv_mount_path }}"
+          - "-description={{ vault_kv_description }}"
+          - kv-v2
+      environment: "{{ vault_cli_environment }}"
+      when: vault_existing_kv_mount | length == 0
+      changed_when: true
+
+    - name: Read the KV version 2 configuration
+      ansible.builtin.command:
+        argv:
+          - vault
+          - read
+          - -format=json
+          - "{{ vault_kv_mount_path }}/config"
+      environment: "{{ vault_cli_environment }}"
+      register: vault_current_kv_config
+      changed_when: false
+
+    - name: Determine whether KV configuration needs updating
+      ansible.builtin.set_fact:
+        vault_kv_config_needs_update: >-
+          {{
+            (
+              (vault_current_kv_config.stdout | from_json)
+              .data.max_versions | int
+            ) != (vault_kv_max_versions | int)
+            or
+            (
+              (vault_current_kv_config.stdout | from_json)
+              .data.cas_required | bool
+            ) != (vault_kv_cas_required | bool)
+            or
+            (
+              (vault_current_kv_config.stdout | from_json)
+              .data.delete_version_after
+            ) != vault_kv_delete_version_after
+          }}
+
+    - name: Configure the KV version 2 secrets engine
+      ansible.builtin.command:
+        argv:
+          - vault
+          - write
+          - "{{ vault_kv_mount_path }}/config"
+          - "max_versions={{ vault_kv_max_versions }}"
+          - "cas_required={{ vault_kv_cas_required | bool | lower }}"
+          - "delete_version_after={{ vault_kv_delete_version_after }}"
+      environment: "{{ vault_cli_environment }}"
+      when: vault_kv_config_needs_update
+      changed_when: true
+
+    - name: Read deployed policy files
+      become: true
+      ansible.builtin.slurp:
+        src: "{{ item.path }}"
+      loop:
+        - name: "{{ vault_secrets_operator_policy_name }}"
+          path: "{{ vault_secrets_operator_policy_path }}"
+
+        - name: "{{ vault_demo_app_policy_name }}"
+          path: "{{ vault_demo_app_policy_path }}"
+      register: vault_kv_policy_files
+
+    - name: Read current Vault policies
+      ansible.builtin.command:
+        argv:
+          - vault
+          - policy
+          - read
+          - "{{ item.item.name }}"
+      environment: "{{ vault_cli_environment }}"
+      loop: "{{ vault_kv_policy_files.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      register: vault_current_kv_policies
+      changed_when: false
+      failed_when: vault_current_kv_policies.rc not in [0, 2]
+
+    - name: Apply changed Vault policies
+      ansible.builtin.command:
+        argv:
+          - vault
+          - policy
+          - write
+          - "{{ item.0.item.name }}"
+          - "-"
+        stdin: "{{ item.0.content | b64decode }}"
+      environment: "{{ vault_cli_environment }}"
+      loop: >-
+        {{
+          vault_kv_policy_files.results
+          | zip(vault_current_kv_policies.results)
+          | list
+        }}
+      loop_control:
+        label: "{{ item.0.item.name }}"
+      when: >-
+        item.1.rc != 0
+        or
+        (
+          item.1.stdout | trim
+          !=
+          (item.0.content | b64decode | trim)
+        )
+      changed_when: true
+
+    - name: Verify the KV mount
+      ansible.builtin.command:
+        argv:
+          - vault
+          - secrets
+          - list
+          - -detailed
+      environment: "{{ vault_cli_environment }}"
+      changed_when: false
+
+    - name: Verify the KV policies
+      ansible.builtin.command:
+        argv:
+          - vault
+          - policy
+          - read
+          - "{{ item }}"
+      environment: "{{ vault_cli_environment }}"
+      loop:
+        - "{{ vault_secrets_operator_policy_name }}"
+        - "{{ vault_demo_app_policy_name }}"
+      changed_when: false

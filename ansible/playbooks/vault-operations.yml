@@ -1,0 +1,152 @@
+---
+- name: Configure MedusaLab Vault operational controls
+  hosts: vault_servers
+  gather_facts: false
+  become: false
+
+  vars:
+    vault_cli_environment:
+      HOME: "{{ vault_cli_home }}"
+      VAULT_ADDR: "https://{{ vault_server_fqdn }}:{{ vault_api_port }}"
+      VAULT_CACERT: "{{ vault_tls_trust_path }}"
+
+  tasks:
+    - name: Verify the cached Vault administrator token
+      ansible.builtin.command:
+        argv:
+          - vault
+          - token
+          - lookup
+          - -format=json
+      environment: "{{ vault_cli_environment }}"
+      register: vault_admin_token_lookup
+      changed_when: false
+      no_log: true
+
+    - name: Verify the cached token has the administrator policy
+      ansible.builtin.assert:
+        that:
+          - >-
+            vault_admin_policy_name in
+            (vault_admin_token_lookup.stdout | from_json).data.policies
+        fail_msg: >-
+          The cached Vault token does not have the medusalab-admin policy.
+          Log in to Vault on vault01 using the userpass administrator account.
+
+    - name: Read the deployed administrator policy
+      become: true
+      ansible.builtin.slurp:
+        src: "{{ vault_admin_policy_path }}"
+      register: vault_admin_policy_file
+
+    - name: Read the current Vault administrator policy
+      ansible.builtin.command:
+        argv:
+          - vault
+          - policy
+          - read
+          - "{{ vault_admin_policy_name }}"
+      environment: "{{ vault_cli_environment }}"
+      register: vault_current_admin_policy
+      changed_when: false
+      failed_when: vault_current_admin_policy.rc not in [0, 2]
+
+    - name: Determine whether the administrator policy needs updating
+      ansible.builtin.set_fact:
+        vault_admin_policy_needs_update: >-
+          {{
+            vault_current_admin_policy.rc != 0
+            or
+            (
+              vault_current_admin_policy.stdout | trim
+              !=
+              (
+                vault_admin_policy_file.content
+                | b64decode
+                | trim
+              )
+            )
+          }}
+
+    - name: Apply the administrator policy
+      ansible.builtin.command:
+        argv:
+          - vault
+          - policy
+          - write
+          - "{{ vault_admin_policy_name }}"
+          - "-"
+        stdin: >-
+          {{
+            vault_admin_policy_file.content
+            | b64decode
+          }}
+      environment: "{{ vault_cli_environment }}"
+      when: vault_admin_policy_needs_update
+      changed_when: true
+
+    - name: Read configured Vault audit devices
+      ansible.builtin.command:
+        argv:
+          - vault
+          - audit
+          - list
+          - -format=json
+      environment: "{{ vault_cli_environment }}"
+      register: vault_audit_devices
+      changed_when: false
+
+    - name: Store the current file audit-device configuration
+      ansible.builtin.set_fact:
+        vault_existing_file_audit: >-
+          {{
+            (
+              vault_audit_devices.stdout | from_json
+            ).get(vault_audit_device_name + '/', {})
+          }}
+
+    - name: Verify an existing file audit device is correctly configured
+      ansible.builtin.assert:
+        that:
+          - vault_existing_file_audit.type == "file"
+          - >-
+            vault_existing_file_audit.options.file_path
+            == vault_audit_log_path
+        fail_msg: >-
+          The existing file audit device differs from the repository
+          configuration. It will not be replaced automatically.
+      when: vault_existing_file_audit | length > 0
+
+    - name: Enable the Vault file audit device
+      ansible.builtin.command:
+        argv:
+          - vault
+          - audit
+          - enable
+          - "-path={{ vault_audit_device_name }}"
+          - file
+          - "file_path={{ vault_audit_log_path }}"
+          - mode=0600
+      environment: "{{ vault_cli_environment }}"
+      when: vault_existing_file_audit | length == 0
+      changed_when: true
+
+    - name: Verify the administrator policy
+      ansible.builtin.command:
+        argv:
+          - vault
+          - policy
+          - read
+          - "{{ vault_admin_policy_name }}"
+      environment: "{{ vault_cli_environment }}"
+      changed_when: false
+
+    - name: Verify the audit device
+      ansible.builtin.command:
+        argv:
+          - vault
+          - audit
+          - list
+          - -detailed
+      environment: "{{ vault_cli_environment }}"
+      changed_when: false

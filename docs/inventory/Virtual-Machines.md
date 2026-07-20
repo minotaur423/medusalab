@@ -247,9 +247,9 @@ The `ubuntu-test01` clone successfully demonstrated:
 | RHEL baseline          | Applied and idempotent                                                   |
 | Infrastructure role    | Primary authoritative and recursive DNS                                  |
 | Secondary DNS server   | `dns02.medusalab.test`                                                   |
-| DNS software	         | BIND                                                                     |
-| Forward zone	         | medusalab.test                                                           |
-| Reverse zone	         | 141.168.192.in-addr.arpa                                                 |
+| DNS software           | BIND                                                                     |
+| Forward zone           | medusalab.test                                                           |
+| Reverse zone           | 141.168.192.in-addr.arpa                                                 |
 | Zone transfer security | TSIG-authenticated to dns02                                              |
 | Current state          | Active                                                                   |
 
@@ -277,30 +277,30 @@ The `dns01` deployment successfully demonstrated:
 
 ## `dns02`
 
-| Property	             | Value                                                                      |
+| Property               | Value                                                                      |
 | ---------------------- | -------------------------------------------------------------------------- |
-| Lifecycle	             | Permanent infrastructure system                                            |
-| Operating system	     | Red Hat Enterprise Linux 10.2                                              |
-| Architecture	         | x86-64                                                                     |
-| Location	             | `D:\MedusaLab\Lab\VirtualMachines\VMware\Infrastructure\dns02`             |
-| Source template	     | `tmpl-rhel-10`                                                             |
-| Clone type	         | Full clone                                                                 |
-| Hostname	             | `dns02.medusalab.test`                                                     |
+| Lifecycle              | Permanent infrastructure system                                            |
+| Operating system       | Red Hat Enterprise Linux 10.2                                              |
+| Architecture           | x86-64                                                                     |
+| Location               | `D:\MedusaLab\Lab\VirtualMachines\VMware\Infrastructure\dns02`             |
+| Source template        | `tmpl-rhel-10`                                                             |
+| Clone type             | Full clone                                                                 |
+| Hostname               | `dns02.medusalab.test`                                                     |
 | Management address     | `192.168.141.11/24`                                                        |
 | Management interface   | `ens160` on VMnet1                                                         |
 | External interface     | `ens192` on VMnet8                                                         |
 | Default gateway        | `192.168.197.2` through VMnet8                                             |
-| Red Hat registration	 | Independently registered                                                   |
-| SSH authentication	 | MedusaLab ED25519 key                                                      |
-| WSL proxy	             | `127.0.0.1:2221`                                                           |
+| Red Hat registration   | Independently registered                                                   |
+| SSH authentication     | MedusaLab ED25519 key                                                      |
+| WSL proxy              | `127.0.0.1:2221`                                                           |
 | Ansible inventory path | `rhel_managed` → `rhel_infrastructure` → `dns_servers` → `dns_secondaries` |
-| RHEL baseline	         | Applied and idempotent                                                     |
-| Infrastructure role	 | Secondary authoritative and recursive DNS                                  |
+| RHEL baseline          | Applied and idempotent                                                     |
+| Infrastructure role    | Secondary authoritative and recursive DNS                                  |
 | Primary DNS server     | `dns01.medusalab.test`                                                     |
 | Forward zone           | `medusalab.test`                                                           |
 | Reverse zone           | `141.168.192.in-addr.arpa`                                                 |
 | Zone transfer security | TSIG using encrypted Ansible Vault variable                                |
-| Current state	         | Active                                                                     |
+| Current state          | Active                                                                     |
 
 ### Validation Results
 
@@ -324,6 +324,65 @@ The `dns02` deployment successfully demonstrated:
 * WSL dual-server integration
 * Successful primary DNS failover validation
 * Ansible idempotence
+
+## `vault01`
+
+| Property             | Value                                    |
+| -------------------- | ---------------------------------------- |
+| Lifecycle            | Permanent infrastructure system          |
+| Operating system     | Red Hat Enterprise Linux 10.2            |
+| Architecture         | x86-64                                   |
+| Source template      | `tmpl-rhel-10`                           |
+| Clone type           | Full clone                               |
+| Hostname             | `vault01.medusalab.test`                 |
+| Management address   | `192.168.141.12/24`                      |
+| Management interface | `ens160` on VMnet1                       |
+| External interface   | `ens192` on VMnet8                       |
+| Default gateway      | `192.168.197.2` through VMnet8           |
+| DNS servers          | `192.168.141.10`, `192.168.141.11`       |
+| Red Hat registration | Independently registered                 |
+| SSH authentication   | MedusaLab ED25519 key                    |
+| WSL proxy            | `127.0.0.1:2222`                         |
+| Ansible group        | `vault_servers`                          |
+| RHEL baseline        | Applied and idempotent                   |
+| Vault version        | 2.0.3                                    |
+| Vault API            | `https://vault01.medusalab.test:8200`    |
+| Vault cluster port   | TCP `8201`                               |
+| Storage              | Integrated Raft                          |
+| Raft node ID         | `vault01`                                |
+| Seal type            | Shamir, five shares with threshold three |
+| Audit destination    | `/var/log/vault/audit.log`               |
+| KV mount             | `secret/`, KV version 2                  |
+| Current state        | Active, initialized, and unsealed        |
+
+### Validation Results
+
+The `vault01` milestone successfully demonstrated:
+
+* Unique VM identity
+* Independent Red Hat registration
+* Static VMnet1 management addressing
+* Dual internal DNS integration
+* WSL SSH access through proxy port `2222`
+* RHEL baseline automation
+* Persistent swap disablement
+* Official HashiCorp Vault installation
+* TLS-protected API and cluster listeners
+* VMnet1-only Vault binding
+* Firewalld source restrictions
+* Integrated Raft storage
+* Controlled Shamir initialization
+* Five unseal shares with threshold three
+* Successful unseal
+* Initial root-token revocation
+* Userpass administrator authentication
+* File audit logging
+* Audit log rotation with `SIGHUP`
+* Repository-managed administrative policy
+* KV version 2 secrets engine
+* Separate human and application policies
+* Ansible idempotence
+
 
 # Lifecycle Policy
 

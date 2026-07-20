@@ -1,0 +1,21 @@
+# Managed by Ansible. Do not edit directly.
+
+{{ vault_audit_log_path }} {
+    daily
+    maxsize 100M
+    rotate {{ vault_audit_log_rotate_count }}
+    dateext
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0600 vault vault
+    sharedscripts
+
+    postrotate
+        /usr/bin/systemctl kill \
+          --signal=HUP \
+          --kill-who=main \
+          vault.service >/dev/null 2>&1 || true
+    endscript
+}

@@ -1,0 +1,25 @@
+# Managed by Ansible. Do not edit directly.
+
+ui = true
+
+cluster_name = "{{ vault_cluster_name }}"
+
+api_addr = "https://{{ vault_server_fqdn }}:{{ vault_api_port }}"
+cluster_addr = "https://{{ vault_server_fqdn }}:{{ vault_cluster_port }}"
+
+disable_mlock = true
+
+listener "tcp" {
+  address         = "{{ vault_server_ipv4 }}:{{ vault_api_port }}"
+  cluster_address = "{{ vault_server_ipv4 }}:{{ vault_cluster_port }}"
+
+  tls_disable     = false
+  tls_cert_file   = "{{ vault_tls_cert_path }}"
+  tls_key_file    = "{{ vault_tls_key_path }}"
+  tls_min_version = "tls12"
+}
+
+storage "raft" {
+  path    = "{{ vault_data_dir }}"
+  node_id = "{{ vault_raft_node_id }}"
+}

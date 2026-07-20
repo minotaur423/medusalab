@@ -1,0 +1,218 @@
+---
+- name: Verify supported Vault platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts["os_family"] == "RedHat"
+      - ansible_facts["distribution_major_version"] | int >= 9
+      - ansible_facts["selinux"]["status"] == "enabled"
+      - ansible_facts["selinux"]["mode"] == "enforcing"
+    fail_msg: >-
+      Vault requires a supported Red Hat-family host with SELinux enforcing.
+
+- name: Verify required Vault variables
+  ansible.builtin.assert:
+    that:
+      - vault_server_fqdn | length > 0
+      - vault_server_short_name | length > 0
+      - vault_server_ipv4 | length > 0
+      - vault_raft_node_id | length > 0
+      - vault_firewall_rules | length == 2
+    fail_msg: Required Vault variables are incomplete.
+
+- name: Check for active swap
+  ansible.builtin.command:
+    cmd: swapon --show --noheadings
+  register: vault_active_swap
+  changed_when: false
+
+- name: Require swap to be disabled
+  ansible.builtin.assert:
+    that:
+      - vault_active_swap.stdout | trim | length == 0
+    fail_msg: >-
+      Active swap was detected. Disable swap before deploying Vault
+      with integrated Raft storage.
+
+- name: Install the official HashiCorp RPM repository
+  ansible.builtin.get_url:
+    url: https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+    dest: /etc/yum.repos.d/hashicorp.repo
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install Vault and required packages
+  ansible.builtin.dnf:
+    name:
+      - "{{ vault_package_name }}"
+      - openssl
+      - firewalld
+    state: present
+    update_cache: true
+
+- name: Ensure firewalld is enabled and running
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: Create Vault directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ vault_config_dir }}"
+      owner: root
+      group: vault
+      mode: "0750"
+
+    - path: "{{ vault_data_dir }}"
+      owner: vault
+      group: vault
+      mode: "0700"
+
+    - path: "{{ vault_tls_dir }}"
+      owner: root
+      group: vault
+      mode: "0750"
+
+- name: Check the bootstrap TLS certificate
+  ansible.builtin.stat:
+    path: "{{ vault_tls_cert_path }}"
+  register: vault_tls_certificate
+
+- name: Check the bootstrap TLS private key
+  ansible.builtin.stat:
+    path: "{{ vault_tls_key_path }}"
+  register: vault_tls_private_key
+
+- name: Generate the bootstrap Vault TLS certificate
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/openssl
+      - req
+      - -x509
+      - -newkey
+      - rsa:4096
+      - -sha256
+      - -nodes
+      - -days
+      - "{{ vault_tls_validity_days | string }}"
+      - -subj
+      - "/CN={{ vault_server_fqdn }}"
+      - -addext
+      - >-
+        subjectAltName=DNS:{{ vault_server_fqdn }},
+        DNS:{{ vault_server_short_name }},
+        IP:{{ vault_server_ipv4 }},
+        IP:127.0.0.1
+      - -keyout
+      - "{{ vault_tls_key_path }}"
+      - -out
+      - "{{ vault_tls_cert_path }}"
+  when: >-
+    not vault_tls_certificate.stat.exists
+    or not vault_tls_private_key.stat.exists
+  notify:
+    - Restart Vault
+
+- name: Protect the Vault TLS private key
+  ansible.builtin.file:
+    path: "{{ vault_tls_key_path }}"
+    owner: root
+    group: vault
+    mode: "0640"
+
+- name: Set Vault TLS certificate permissions
+  ansible.builtin.file:
+    path: "{{ vault_tls_cert_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install the bootstrap certificate as a trust anchor
+  ansible.builtin.copy:
+    src: "{{ vault_tls_cert_path }}"
+    dest: "{{ vault_tls_trust_path }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Update system CA trust
+
+- name: Deploy the Vault configuration
+  ansible.builtin.template:
+    src: vault.hcl.j2
+    dest: "{{ vault_config_path }}"
+    owner: root
+    group: vault
+    mode: "0640"
+  notify:
+    - Restart Vault
+
+- name: Query Vault firewall rules
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/firewall-cmd
+      - --permanent
+      - "--zone={{ vault_firewall_zone }}"
+      - "--query-rich-rule={{ item }}"
+  loop: "{{ vault_firewall_rules }}"
+  register: vault_firewall_query
+  changed_when: false
+  failed_when: vault_firewall_query.rc not in [0, 1]
+
+- name: Add missing Vault firewall rules
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/firewall-cmd
+      - --permanent
+      - "--zone={{ vault_firewall_zone }}"
+      - "--add-rich-rule={{ item.item }}"
+  loop: "{{ vault_firewall_query.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.rc == 1
+  notify:
+    - Reload firewalld
+
+- name: Enable and start Vault
+  ansible.builtin.systemd:
+    name: vault
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Apply pending Vault handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for the Vault API listener
+  ansible.builtin.wait_for:
+    host: "{{ vault_server_ipv4 }}"
+    port: "{{ vault_api_port }}"
+    delay: 1
+    timeout: 30
+
+- name: Read the Vault server status
+  ansible.builtin.command:
+    cmd: vault status -format=json
+  environment:
+    VAULT_ADDR: "https://{{ vault_server_fqdn }}:{{ vault_api_port }}"
+    VAULT_CACERT: "{{ vault_tls_cert_path }}"
+  register: vault_server_status
+  changed_when: false
+  failed_when: vault_server_status.rc not in [0, 2]
+
+- name: Display the Vault state
+  ansible.builtin.debug:
+    msg:
+      - "Vault service is listening with TLS."
+      - "Initialized: {{ (vault_server_status.stdout | from_json).initialized }}"
+      - "Sealed: {{ (vault_server_status.stdout | from_json).sealed }}"
+
+- name: Configure Vault operational files
+  ansible.builtin.include_tasks: operations-files.yml

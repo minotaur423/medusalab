@@ -164,10 +164,54 @@
 * DNS high-availability ADR and runbook created
 
 ### Next
+
 * Add automated DNS availability and zone-serial monitoring
 * Add alerts for failed zone transfers
 * Automate Windows NRPT configuration
 * Evaluate placement of a DNS server on a separate physical host
 * Select and deploy the next permanent infrastructure service
 * Retire or repurpose validation systems when no longer required
+
+## Phase 5 — HashiCorp Vault Security Platform
+
+### Completed
+
+* Created permanent RHEL infrastructure VM `vault01`
+* Assigned `192.168.141.12/24`
+* Added `vault01` forward and reverse DNS records
+* Added Windows-to-WSL SSH proxy port `2222`
+* Enrolled `vault01` in Ansible
+* Applied the RHEL baseline idempotently
+* Disabled swap persistently
+* Created the Ansible `vault` role
+* Installed Vault from the official HashiCorp repository
+* Configured integrated Raft storage
+* Configured TLS-protected API and cluster listeners
+* Restricted Vault listeners to VMnet1
+* Configured source-restricted firewalld rules
+* Initialized Vault using five Shamir shares and threshold three
+* Encrypted and protected the initialization bundle outside Git
+* Unsealed Vault successfully
+* Enabled file audit logging
+* Created the `medusalab-admin` policy
+* Enabled userpass administration
+* Revoked the initial root token
+* Automated the audit directory and log file
+* Automated audit log rotation
+* Validated post-rotation audit logging
+* Enabled KV version 2 at `secret/`
+* Configured ten retained KV versions
+* Created the `medusalab-secrets-operator` policy
+* Created the `medusalab-demo-app` policy
+* Validated Vault playbook idempotence
+* Created the Vault architecture decision and operations runbook
+
+### Next
+
+* Automate protected Raft snapshots
+* Add Vault health, seal-state, and certificate-expiration monitoring
+* Decide whether to add additional Raft nodes before OpenShift integration
+* Begin OpenShift infrastructure planning
+* Configure Kubernetes authentication after the OpenShift API is available
+* Test application secret delivery from Vault into OpenShift
 
