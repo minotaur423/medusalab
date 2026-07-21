@@ -17,7 +17,7 @@ bind_dns_admin_rname: hostmaster.medusalab.test
 
 bind_dns_transfer_key_name: medusalab-transfer-key
 
-bind_dns_zone_serial: 2026071901
+bind_dns_zone_serial: 2026072001
 
 bind_dns_nameservers:
   - dns01.medusalab.test
@@ -42,6 +42,18 @@ bind_dns_forward_records:
   - name: vault01
     address: 192.168.141.12
 
+  - name: lb01
+    address: 192.168.141.13
+
+  - name: api.ocp
+    address: 192.168.141.13
+
+  - name: api-int.ocp
+    address: 192.168.141.13
+
+  - name: "*.apps.ocp"
+    address: 192.168.141.13
+
 bind_dns_reverse_records:
   - octet: 10
     fqdn: dns01.medusalab.test
@@ -57,3 +69,6 @@ bind_dns_reverse_records:
 
   - octet: 12
     fqdn: vault01.medusalab.test
+
+  - octet: 13
+    fqdn: lb01.medusalab.test
