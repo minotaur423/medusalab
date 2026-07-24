@@ -1,0 +1,40 @@
+---
+openshift_cluster_name: ocp
+openshift_base_domain: medusalab.test
+
+openshift_lb_bind_address: ""
+openshift_lb_management_interface: ens160
+openshift_lb_firewall_zone: public
+openshift_lb_allowed_source_ipv4: 192.168.141.0/24
+
+openshift_lb_api_port: 6443
+openshift_lb_machine_config_port: 22623
+openshift_lb_ingress_http_port: 80
+openshift_lb_ingress_https_port: 443
+
+openshift_control_plane_nodes: []
+
+openshift_lb_firewall_rules:
+  - >-
+    rule family="ipv4"
+    source address="{{ openshift_lb_allowed_source_ipv4 }}"
+    port port="{{ openshift_lb_api_port }}" protocol="tcp"
+    accept
+
+  - >-
+    rule family="ipv4"
+    source address="{{ openshift_lb_allowed_source_ipv4 }}"
+    port port="{{ openshift_lb_machine_config_port }}" protocol="tcp"
+    accept
+
+  - >-
+    rule family="ipv4"
+    source address="{{ openshift_lb_allowed_source_ipv4 }}"
+    port port="{{ openshift_lb_ingress_http_port }}" protocol="tcp"
+    accept
+
+  - >-
+    rule family="ipv4"
+    source address="{{ openshift_lb_allowed_source_ipv4 }}"
+    port port="{{ openshift_lb_ingress_https_port }}" protocol="tcp"
+    accept

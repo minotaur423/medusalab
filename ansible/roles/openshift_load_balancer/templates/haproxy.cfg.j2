@@ -1,0 +1,67 @@
+# Managed by Ansible. Do not edit directly.
+
+global
+    maxconn 20000
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    mode tcp
+    option dontlognull
+    retries 3
+
+    timeout connect 10s
+    timeout client 1m
+    timeout server 1m
+    timeout check 10s
+
+listen api-server-{{ openshift_lb_api_port }}
+    bind {{ openshift_lb_bind_address }}:{{ openshift_lb_api_port }}
+    mode tcp
+    balance roundrobin
+
+    option httpchk GET /readyz HTTP/1.0
+    http-check expect status 200
+
+    default-server inter 5s rise 2 fall 3
+
+{% for node in openshift_control_plane_nodes %}
+    server {{ node.name }} {{ node.address }}:{{ openshift_lb_api_port }} check check-ssl verify none
+{% endfor %}
+
+listen machine-config-server-{{ openshift_lb_machine_config_port }}
+    bind {{ openshift_lb_bind_address }}:{{ openshift_lb_machine_config_port }}
+    mode tcp
+    balance roundrobin
+    option tcp-check
+
+    default-server inter 5s rise 2 fall 3
+
+{% for node in openshift_control_plane_nodes %}
+    server {{ node.name }} {{ node.address }}:{{ openshift_lb_machine_config_port }} check
+{% endfor %}
+
+listen ingress-router-{{ openshift_lb_ingress_https_port }}
+    bind {{ openshift_lb_bind_address }}:{{ openshift_lb_ingress_https_port }}
+    mode tcp
+    balance source
+    option tcp-check
+
+    default-server inter 5s rise 2 fall 3
+
+{% for node in openshift_control_plane_nodes %}
+    server {{ node.name }} {{ node.address }}:{{ openshift_lb_ingress_https_port }} check
+{% endfor %}
+
+listen ingress-router-{{ openshift_lb_ingress_http_port }}
+    bind {{ openshift_lb_bind_address }}:{{ openshift_lb_ingress_http_port }}
+    mode tcp
+    balance source
+    option tcp-check
+
+    default-server inter 5s rise 2 fall 3
+
+{% for node in openshift_control_plane_nodes %}
+    server {{ node.name }} {{ node.address }}:{{ openshift_lb_ingress_http_port }} check
+{% endfor %}

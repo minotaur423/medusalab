@@ -1,0 +1,29 @@
+---
+openshift_nodes:
+  - name: ocp-cp01
+    fqdn: ocp-cp01.ocp.medusalab.test
+    role: master
+    rendezvous: true
+    management_ipv4: 192.168.141.30
+    management_mac: "00:50:56:28:99:BF"
+    external_mac: "00:50:56:27:96:6B"
+    install_device: /dev/nvme0n1
+
+  - name: ocp-cp02
+    fqdn: ocp-cp02.ocp.medusalab.test
+    role: master
+    rendezvous: false
+    management_ipv4: 192.168.141.31
+    management_mac: "00:50:56:3F:97:15"
+    external_mac: "00:50:56:36:4F:D8"
+    install_device: /dev/nvme0n1
+
+  - name: ocp-cp03
+    fqdn: ocp-cp03.ocp.medusalab.test
+    role: master
+    rendezvous: false
+    management_ipv4: 192.168.141.32
+    management_mac: "00:50:56:20:55:EB"
+    external_mac: "00:50:56:3C:88:AA"
+    install_device: /dev/nvme0n1
+

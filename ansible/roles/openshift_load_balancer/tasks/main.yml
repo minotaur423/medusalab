@@ -1,0 +1,154 @@
+---
+- name: Verify supported load-balancer platform
+  ansible.builtin.assert:
+    that:
+      - ansible_facts["os_family"] == "RedHat"
+      - ansible_facts["distribution_major_version"] | int >= 9
+      - ansible_facts["selinux"]["status"] == "enabled"
+      - ansible_facts["selinux"]["mode"] == "enforcing"
+    fail_msg: >-
+      The OpenShift load balancer requires a supported Red Hat-family
+      host with SELinux enforcing.
+
+- name: Verify required load-balancer variables
+  ansible.builtin.assert:
+    that:
+      - openshift_cluster_name | length > 0
+      - openshift_base_domain | length > 0
+      - openshift_lb_bind_address | length > 0
+      - openshift_lb_allowed_source_ipv4 | length > 0
+      - openshift_control_plane_nodes | length == 3
+      - >-
+        openshift_control_plane_nodes
+        | map(attribute="address")
+        | unique
+        | list
+        | length == 3
+    fail_msg: OpenShift load-balancer variables are incomplete.
+
+- name: Install HAProxy and supporting packages
+  ansible.builtin.dnf:
+    name:
+      - haproxy
+      - firewalld
+      - policycoreutils
+    state: present
+
+- name: Ensure firewalld is enabled and running
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: Read the management-interface firewall zone
+  ansible.builtin.command:
+    argv:
+      - firewall-cmd
+      - "--get-zone-of-interface={{ openshift_lb_management_interface }}"
+  register: openshift_lb_interface_zone
+  changed_when: false
+
+- name: Verify the management-interface firewall zone
+  ansible.builtin.assert:
+    that:
+      - >-
+        openshift_lb_interface_zone.stdout | trim
+        == openshift_lb_firewall_zone
+    fail_msg: >-
+      Interface {{ openshift_lb_management_interface }} is assigned to
+      firewall zone "{{ openshift_lb_interface_zone.stdout | trim }}",
+      but the role expects "{{ openshift_lb_firewall_zone }}".
+
+- name: Read the HAProxy SELinux network-connect boolean
+  ansible.builtin.command:
+    argv:
+      - getsebool
+      - haproxy_connect_any
+  register: openshift_lb_selinux_boolean
+  changed_when: false
+
+- name: Permit HAProxy network connections through SELinux
+  ansible.builtin.command:
+    argv:
+      - setsebool
+      - -P
+      - haproxy_connect_any
+      - "on"
+  when: "'--> on' not in openshift_lb_selinux_boolean.stdout"
+  changed_when: true
+
+- name: Deploy the HAProxy configuration
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/sbin/haproxy -c -f %s
+  notify:
+    - Restart HAProxy
+
+- name: Restore the HAProxy configuration SELinux context
+  ansible.builtin.command:
+    argv:
+      - restorecon
+      - -F
+      - /etc/haproxy/haproxy.cfg
+  changed_when: false
+
+- name: Query OpenShift load-balancer firewall rules
+  ansible.builtin.command:
+    argv:
+      - firewall-cmd
+      - --permanent
+      - "--zone={{ openshift_lb_firewall_zone }}"
+      - "--query-rich-rule={{ item }}"
+  loop: "{{ openshift_lb_firewall_rules }}"
+  register: openshift_lb_firewall_queries
+  changed_when: false
+  failed_when: openshift_lb_firewall_queries.rc not in [0, 1]
+
+- name: Add missing OpenShift load-balancer firewall rules
+  ansible.builtin.command:
+    argv:
+      - firewall-cmd
+      - --permanent
+      - "--zone={{ openshift_lb_firewall_zone }}"
+      - "--add-rich-rule={{ item.item }}"
+  loop: "{{ openshift_lb_firewall_queries.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.rc == 1
+  notify:
+    - Reload firewalld
+
+- name: Enable and start HAProxy
+  ansible.builtin.systemd:
+    name: haproxy
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Apply pending HAProxy and firewall handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Validate the deployed HAProxy configuration
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/haproxy
+      - -c
+      - -f
+      - /etc/haproxy/haproxy.cfg
+  changed_when: false
+
+- name: Wait for OpenShift frontend listeners
+  ansible.builtin.wait_for:
+    host: "{{ openshift_lb_bind_address }}"
+    port: "{{ item }}"
+    state: started
+    timeout: 30
+  loop:
+    - "{{ openshift_lb_api_port }}"
+    - "{{ openshift_lb_machine_config_port }}"
+    - "{{ openshift_lb_ingress_http_port }}"
+    - "{{ openshift_lb_ingress_https_port }}"
