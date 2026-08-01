@@ -16,6 +16,10 @@ defaults
     timeout server 1m
     timeout check 10s
 
+# OpenShift API
+#
+# The API frontend remains on VMnet1 and forwards to each control-plane
+# node's VMnet1 management address.
 listen api-server-{{ openshift_lb_api_port }}
     bind {{ openshift_lb_bind_address }}:{{ openshift_lb_api_port }}
     mode tcp
@@ -30,6 +34,9 @@ listen api-server-{{ openshift_lb_api_port }}
     server {{ node.name }} {{ node.address }}:{{ openshift_lb_api_port }} check check-ssl verify none
 {% endfor %}
 
+# OpenShift Machine Config Server
+#
+# Machine Config and Ignition traffic remain on VMnet1.
 listen machine-config-server-{{ openshift_lb_machine_config_port }}
     bind {{ openshift_lb_bind_address }}:{{ openshift_lb_machine_config_port }}
     mode tcp
@@ -42,8 +49,16 @@ listen machine-config-server-{{ openshift_lb_machine_config_port }}
     server {{ node.name }} {{ node.address }}:{{ openshift_lb_machine_config_port }} check
 {% endfor %}
 
+# OpenShift HTTPS application ingress
+#
+# Retain the VMnet1 listener for management/testing and expose the
+# production applications address on VMnet8.
+#
+# Backends use the node VMnet8 addresses. HAProxy health checks ensure
+# that traffic is sent only to nodes currently hosting router pods.
 listen ingress-router-{{ openshift_lb_ingress_https_port }}
     bind {{ openshift_lb_bind_address }}:{{ openshift_lb_ingress_https_port }}
+    bind {{ openshift_lb_apps_bind_address }}:{{ openshift_lb_ingress_https_port }}
     mode tcp
     balance source
     option tcp-check
@@ -51,11 +66,12 @@ listen ingress-router-{{ openshift_lb_ingress_https_port }}
     default-server inter 5s rise 2 fall 3
 
 {% for node in openshift_control_plane_nodes %}
-    server {{ node.name }} {{ node.address }}:{{ openshift_lb_ingress_https_port }} check
+    server {{ node.name }} {{ node.ingress_address }}:{{ openshift_lb_ingress_https_port }} check
 {% endfor %}
 
 listen ingress-router-{{ openshift_lb_ingress_http_port }}
     bind {{ openshift_lb_bind_address }}:{{ openshift_lb_ingress_http_port }}
+    bind {{ openshift_lb_apps_bind_address }}:{{ openshift_lb_ingress_http_port }}
     mode tcp
     balance source
     option tcp-check
@@ -63,5 +79,5 @@ listen ingress-router-{{ openshift_lb_ingress_http_port }}
     default-server inter 5s rise 2 fall 3
 
 {% for node in openshift_control_plane_nodes %}
-    server {{ node.name }} {{ node.address }}:{{ openshift_lb_ingress_http_port }} check
+    server {{ node.name }} {{ node.ingress_address }}:{{ openshift_lb_ingress_http_port }} check
 {% endfor %}

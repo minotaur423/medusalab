@@ -2,10 +2,18 @@
 openshift_cluster_name: ocp
 openshift_base_domain: medusalab.test
 
+# VMnet1: API, Machine Config Server, management, and optional
+# administrative access to application ingress.
 openshift_lb_bind_address: 192.168.141.13
 openshift_lb_management_interface: ens160
 openshift_lb_firewall_zone: public
 openshift_lb_allowed_source_ipv4: 192.168.141.0/24
+
+# VMnet8: cluster-facing OpenShift application ingress.
+openshift_lb_apps_bind_address: 192.168.197.134
+openshift_lb_apps_interface: ens192
+openshift_lb_apps_firewall_zone: public
+openshift_lb_apps_allowed_source_ipv4: 192.168.197.0/24
 
 openshift_lb_api_port: 6443
 openshift_lb_machine_config_port: 22623
@@ -15,9 +23,12 @@ openshift_lb_ingress_https_port: 443
 openshift_control_plane_nodes:
   - name: ocp-cp01
     address: 192.168.141.30
+    ingress_address: 192.168.197.135
 
   - name: ocp-cp02
     address: 192.168.141.31
+    ingress_address: 192.168.197.136
 
   - name: ocp-cp03
     address: 192.168.141.32
+    ingress_address: 192.168.197.137

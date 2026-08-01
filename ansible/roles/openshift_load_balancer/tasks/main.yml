@@ -16,11 +16,26 @@
       - openshift_cluster_name | length > 0
       - openshift_base_domain | length > 0
       - openshift_lb_bind_address | length > 0
+      - openshift_lb_apps_bind_address | length > 0
       - openshift_lb_allowed_source_ipv4 | length > 0
+      - openshift_lb_apps_allowed_source_ipv4 | length > 0
+      - openshift_lb_management_interface in ansible_facts.interfaces
+      - openshift_lb_apps_interface in ansible_facts.interfaces
       - openshift_control_plane_nodes | length == 3
       - >-
         openshift_control_plane_nodes
+        | selectattr("ingress_address", "defined")
+        | list
+        | length == 3
+      - >-
+        openshift_control_plane_nodes
         | map(attribute="address")
+        | unique
+        | list
+        | length == 3
+      - >-
+        openshift_control_plane_nodes
+        | map(attribute="ingress_address")
         | unique
         | list
         | length == 3
@@ -40,24 +55,67 @@
     enabled: true
     state: started
 
-- name: Read the management-interface firewall zone
+- name: Read configured load-balancer interface addresses
+  ansible.builtin.command:
+    argv:
+      - ip
+      - -4
+      - -o
+      - address
+      - show
+      - dev
+      - "{{ item.interface }}"
+  loop:
+    - interface: "{{ openshift_lb_management_interface }}"
+      address: "{{ openshift_lb_bind_address }}"
+
+    - interface: "{{ openshift_lb_apps_interface }}"
+      address: "{{ openshift_lb_apps_bind_address }}"
+  loop_control:
+    label: "{{ item.interface }} -> {{ item.address }}"
+  register: openshift_lb_interface_addresses
+  changed_when: false
+  check_mode: false
+
+- name: Verify load-balancer addresses are assigned
+  ansible.builtin.assert:
+    that:
+      - item.item.address in item.stdout
+    fail_msg: >-
+      Address {{ item.item.address }} is not assigned to interface
+      {{ item.item.interface }}.
+  loop: "{{ openshift_lb_interface_addresses.results }}"
+  loop_control:
+    label: "{{ item.item.interface }} -> {{ item.item.address }}"
+
+- name: Read load-balancer interface firewall zones
   ansible.builtin.command:
     argv:
       - firewall-cmd
-      - "--get-zone-of-interface={{ openshift_lb_management_interface }}"
-  register: openshift_lb_interface_zone
-  changed_when: false
+      - "--get-zone-of-interface={{ item.interface }}"
+  loop:
+    - interface: "{{ openshift_lb_management_interface }}"
+      zone: "{{ openshift_lb_firewall_zone }}"
 
-- name: Verify the management-interface firewall zone
+    - interface: "{{ openshift_lb_apps_interface }}"
+      zone: "{{ openshift_lb_apps_firewall_zone }}"
+  loop_control:
+    label: "{{ item.interface }}"
+  register: openshift_lb_interface_zones
+  changed_when: false
+  check_mode: false
+
+- name: Verify load-balancer interface firewall zones
   ansible.builtin.assert:
     that:
-      - >-
-        openshift_lb_interface_zone.stdout | trim
-        == openshift_lb_firewall_zone
+      - item.stdout | trim == item.item.zone
     fail_msg: >-
-      Interface {{ openshift_lb_management_interface }} is assigned to
-      firewall zone "{{ openshift_lb_interface_zone.stdout | trim }}",
-      but the role expects "{{ openshift_lb_firewall_zone }}".
+      Interface {{ item.item.interface }} is assigned to firewall zone
+      "{{ item.stdout | trim }}", but the role expects
+      "{{ item.item.zone }}".
+  loop: "{{ openshift_lb_interface_zones.results }}"
+  loop_control:
+    label: "{{ item.item.interface }}"
 
 - name: Read the HAProxy SELinux network-connect boolean
   ansible.builtin.command:
@@ -84,9 +142,10 @@
     owner: root
     group: root
     mode: "0644"
+    backup: true
     validate: /usr/sbin/haproxy -c -f %s
   notify:
-    - Restart HAProxy
+    - Reload HAProxy
 
 - name: Restore the HAProxy configuration SELinux context
   ansible.builtin.command:
@@ -101,9 +160,11 @@
     argv:
       - firewall-cmd
       - --permanent
-      - "--zone={{ openshift_lb_firewall_zone }}"
-      - "--query-rich-rule={{ item }}"
+      - "--zone={{ item.zone }}"
+      - "--query-rich-rule={{ item.rule }}"
   loop: "{{ openshift_lb_firewall_rules }}"
+  loop_control:
+    label: "{{ item.zone }}: {{ item.rule }}"
   register: openshift_lb_firewall_queries
   changed_when: false
   failed_when: openshift_lb_firewall_queries.rc not in [0, 1]
@@ -113,11 +174,11 @@
     argv:
       - firewall-cmd
       - --permanent
-      - "--zone={{ openshift_lb_firewall_zone }}"
-      - "--add-rich-rule={{ item.item }}"
+      - "--zone={{ item.item.zone }}"
+      - "--add-rich-rule={{ item.item.rule }}"
   loop: "{{ openshift_lb_firewall_queries.results }}"
   loop_control:
-    label: "{{ item.item }}"
+    label: "{{ item.item.zone }}: {{ item.item.rule }}"
   when: item.rc == 1
   notify:
     - Reload firewalld
@@ -140,8 +201,9 @@
       - -f
       - /etc/haproxy/haproxy.cfg
   changed_when: false
+  check_mode: false
 
-- name: Wait for OpenShift frontend listeners
+- name: Wait for VMnet1 OpenShift listeners
   ansible.builtin.wait_for:
     host: "{{ openshift_lb_bind_address }}"
     port: "{{ item }}"
@@ -150,5 +212,15 @@
   loop:
     - "{{ openshift_lb_api_port }}"
     - "{{ openshift_lb_machine_config_port }}"
+    - "{{ openshift_lb_ingress_http_port }}"
+    - "{{ openshift_lb_ingress_https_port }}"
+
+- name: Wait for VMnet8 application-ingress listeners
+  ansible.builtin.wait_for:
+    host: "{{ openshift_lb_apps_bind_address }}"
+    port: "{{ item }}"
+    state: started
+    timeout: 30
+  loop:
     - "{{ openshift_lb_ingress_http_port }}"
     - "{{ openshift_lb_ingress_https_port }}"
