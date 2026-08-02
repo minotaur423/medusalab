@@ -79,13 +79,8 @@ ca49da0 Validate Ubuntu golden image workflow
 │       ├── verification
 │       │   └── tasks
 │       └── workstation
-├── docs
-│   ├── Consolidation
-│   │   └── medusalab-inventory.txt
-│   ├── OverallProgress.md
-│   ├── architecture
-│   │   └── 01-MedusaLab-Overview.md
-│   ├── decisions
+├── documentation
+│   ├── ADR
 │   │   ├── ADR-0001-Platform-Strategy.md
 │   │   ├── ADR-0002-Workstation-Configuration-Strategy.md
 │   │   ├── ADR-0003-OpenShift-Dual-Network-and-Host-Routed-Egress.md
@@ -93,18 +88,26 @@ ca49da0 Validate Ubuntu golden image workflow
 │   │   ├── ADR-0004-Internal-DNS-Architecture.md
 │   │   ├── ADR-0005-Internal-DNS-High-Availability.md
 │   │   └── ADR-0006-Vault-Security-Platform.md
-│   ├── diagrams
-│   ├── inventory
+│   ├── Architecture
+│   │   ├── 01-MedusaLab-Overview.md
+│   │   └── OverallProgress.md
+│   ├── Consolidation
+│   │   └── medusalab-inventory.txt
+│   ├── Diagrams
+│   │   └── placeHolder.md
+│   ├── Inventory
 │   │   ├── Engineering-Workstation.md
 │   │   ├── Hardware.md
 │   │   └── Virtual-Machines.md
-│   ├── journal
+│   ├── Journal
 │   │   └── 2026
 │   │       ├── 2026-07-07.md
 │   │       └── 2026-07-08.md
-│   ├── networking
+│   ├── Milestones
+│   │   └── README.md
+│   ├── Networking
 │   │   └── IP-Allocations.md
-│   ├── runbooks
+│   ├── Runbooks
 │   │   ├── DNS-High-Availability.md
 │   │   ├── Internal-DNS.md
 │   │   ├── OpenShift-4.22.4-Installation-and-Network-Resolution.md
@@ -112,7 +115,7 @@ ca49da0 Validate Ubuntu golden image workflow
 │   │   ├── Ubuntu-Golden-Image.md
 │   │   ├── Vault-Operations.md
 │   │   └── WSL-VMware-SSH.md
-│   └── standards
+│   └── Standards
 │       └── VMware-Infrastructure.md
 ├── dotfiles
 │   ├── README.md
@@ -152,7 +155,7 @@ ca49da0 Validate Ubuntu golden image workflow
 ├── standards
 └── terraform
 
-72 directories, 64 files
+73 directories, 66 files
 
 ## Ansible Inventory
 @all:
