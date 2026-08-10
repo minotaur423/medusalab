@@ -17,8 +17,9 @@
       - bind_dns_primary_fqdn | length > 0
       - bind_dns_admin_rname | length > 0
       - bind_dns_listen_ipv4 | length > 0
-      - bind_dns_allowed_networks | length > 0
       - bind_dns_nameservers | length >= 2
+      - bind_dns_query_networks | length > 0
+      - bind_dns_recursion_networks | length > 0
       - bind_dns_validation_fqdn | length > 0
       - bind_dns_expected_address | length > 0
       - bind_dns_transfer_secret | length > 0
@@ -191,6 +192,7 @@
     host: 127.0.0.1
     port: 53
     timeout: 30
+  when: not ansible_check_mode
 
 - name: Wait for the forward zone to reach the current serial
   ansible.builtin.command:
@@ -209,6 +211,7 @@
   until: >-
     bind_dns_zone_serial | string
     in bind_dns_forward_soa.stdout
+  when: not ansible_check_mode
 
 - name: Wait for the reverse zone to reach the current serial
   ansible.builtin.command:
@@ -227,6 +230,7 @@
   until: >-
     bind_dns_zone_serial | string
     in bind_dns_reverse_soa.stdout
+  when: not ansible_check_mode
 
 - name: Check transferred secondary zone files
   ansible.builtin.stat:
@@ -260,6 +264,7 @@
   failed_when: >-
     bind_dns_forward_test.stdout | trim
     != bind_dns_expected_address
+  when: not ansible_check_mode
 
 - name: Verify this DNS server's reverse record
   ansible.builtin.command:
@@ -274,6 +279,7 @@
   failed_when: >-
     bind_dns_reverse_test.stdout | trim
     != bind_dns_validation_fqdn + '.'
+  when: not ansible_check_mode
 
 - name: Verify both authoritative name servers
   ansible.builtin.command:
@@ -288,6 +294,7 @@
   failed_when: >-
     (bind_dns_nameservers[0] + '.') not in bind_dns_ns_test.stdout_lines or
     (bind_dns_nameservers[1] + '.') not in bind_dns_ns_test.stdout_lines
+  when: not ansible_check_mode
 
 - name: Verify external recursive resolution
   ansible.builtin.command:
@@ -304,3 +311,4 @@
   retries: 3
   delay: 2
   until: bind_dns_recursive_test.stdout | trim | length > 0
+  when: not ansible_check_mode

@@ -1,11 +1,12 @@
 ---
-bind_dns_allowed_networks:
+bind_dns_query_networks:
   - 127.0.0.1
   - 192.168.141.0/24
+  - 192.168.1.0/24
 
-bind_dns_forwarders:
-  - 1.1.1.1
-  - 1.0.0.1
+bind_dns_recursion_networks:
+  - 127.0.0.1
+  - 192.168.141.0/24
 
 bind_dns_forward_only: false
 
@@ -17,7 +18,7 @@ bind_dns_admin_rname: hostmaster.medusalab.test
 
 bind_dns_transfer_key_name: medusalab-transfer-key
 
-bind_dns_zone_serial: 2026072101
+bind_dns_zone_serial: 2026081001
 
 bind_dns_nameservers:
   - dns01.medusalab.test
@@ -52,7 +53,7 @@ bind_dns_forward_records:
     address: 192.168.141.13
 
   - name: "*.apps.ocp"
-    address: 192.168.141.13
+    address: 192.168.197.134
 
   - name: ocp-cp01.ocp
     address: 192.168.141.30

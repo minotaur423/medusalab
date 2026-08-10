@@ -1,9 +1,15 @@
 // Managed by Ansible.
 // Manual changes will be overwritten.
 
-acl "medusalab-clients" {
-{% for network in bind_dns_allowed_networks %}
-    {{ network }};
+acl "medusalab-query-clients" {
+{% for network in bind_dns_query_networks %}
+{{ network }};
+{% endfor %}
+};
+
+acl "medusalab-recursion-clients" {
+{% for network in bind_dns_recursion_networks %}
+{{ network }};
 {% endfor %}
 };
 
@@ -30,11 +36,11 @@ options {
     recursing-file "/var/named/data/named.recursing";
 
     allow-query {
-        medusalab-clients;
+        medusalab-query-clients;
     };
 
     allow-recursion {
-        medusalab-clients;
+        medusalab-recursion-clients;
     };
 
     recursion yes;
@@ -76,7 +82,7 @@ zone "{{ bind_dns_domain }}" IN {
     file "{{ bind_dns_domain }}.zone";
 
     allow-query {
-        medusalab-clients;
+        medusalab-query-clients;
     };
 
     allow-transfer {
@@ -97,7 +103,7 @@ zone "{{ bind_dns_reverse_zone }}" IN {
     file "{{ bind_dns_reverse_zone }}.zone";
 
     allow-query {
-        medusalab-clients;
+        medusalab-query-clients;
     };
 
     allow-transfer {
@@ -118,7 +124,7 @@ zone "{{ bind_dns_domain }}" IN {
     file "slaves/{{ bind_dns_domain }}.zone";
 
     allow-query {
-        medusalab-clients;
+        medusalab-query-clients;
     };
 
     allow-transfer {
@@ -137,7 +143,7 @@ zone "{{ bind_dns_reverse_zone }}" IN {
     file "slaves/{{ bind_dns_reverse_zone }}.zone";
 
     allow-query {
-        medusalab-clients;
+        medusalab-query-clients;
     };
 
     allow-transfer {

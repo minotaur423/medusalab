@@ -1,0 +1,8 @@
+---
+- name: Configure MedusaLab infrastructure return routes
+  hosts: rhel_infrastructure
+  become: true
+  gather_facts: false
+
+  roles:
+    - static_routes

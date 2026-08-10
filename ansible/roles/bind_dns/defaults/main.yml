@@ -15,7 +15,10 @@ bind_dns_server_role: ""
 bind_dns_listen_ipv4:
   - 127.0.0.1
 
-bind_dns_allowed_networks:
+bind_dns_query_networks:
+  - 127.0.0.1
+
+bind_dns_recursion_networks:
   - 127.0.0.1
 
 bind_dns_forwarders: []

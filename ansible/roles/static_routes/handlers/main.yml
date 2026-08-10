@@ -1,0 +1,9 @@
+---
+- name: Reapply management connection
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - device
+      - reapply
+      - "{{ static_routes_interface }}"
+  changed_when: true

@@ -1,0 +1,40 @@
+---
+- name: Validate static route configuration
+  ansible.builtin.assert:
+    that:
+      - static_routes_connection | length > 0
+      - static_routes | length > 0
+      - item.ip | length > 0
+      - item.next_hop | length > 0
+      - item.metric | int >= 0
+  loop: "{{ static_routes }}"
+  loop_control:
+    label: "{{ item.ip }} via {{ item.next_hop }} metric {{ item.metric }}"
+
+- name: Read configured IPv4 routes
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - -g
+      - ipv4.routes
+      - connection
+      - show
+      - "{{ static_routes_connection }}"
+  register: static_routes_current
+  changed_when: false
+
+- name: Configure required static routes
+  ansible.builtin.command:
+    argv:
+      - nmcli
+      - connection
+      - modify
+      - "{{ static_routes_connection }}"
+      - +ipv4.routes
+      - "{{ item.ip }} {{ item.next_hop }} {{ item.metric }}"
+  loop: "{{ static_routes }}"
+  loop_control:
+    label: "{{ item.ip }} via {{ item.next_hop }} metric {{ item.metric }}"
+  when:
+    - item.ip not in static_routes_current.stdout
+  notify: Reapply management connection
