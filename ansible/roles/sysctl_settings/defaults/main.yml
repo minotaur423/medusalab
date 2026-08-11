@@ -1,0 +1,3 @@
+---
+sysctl_settings: {}
+sysctl_settings_file: /etc/sysctl.d/90-medusalab.conf

@@ -1,0 +1,35 @@
+---
+- name: Validate sysctl settings
+  ansible.builtin.assert:
+    that:
+      - sysctl_settings is mapping
+      - sysctl_settings | length > 0
+    fail_msg: >-
+      sysctl_settings must contain at least one kernel parameter.
+
+- name: Deploy MedusaLab sysctl settings
+  ansible.builtin.copy:
+    dest: "{{ sysctl_settings_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible.
+      # Manual changes will be overwritten.
+      {% for key, value in sysctl_settings | dictsort %}
+      {{ key }} = {{ value }}
+      {% endfor %}
+  register: sysctl_settings_config
+
+- name: Apply changed sysctl settings
+  ansible.builtin.command:
+    argv:
+      - sysctl
+      - -w
+      - "{{ item.key }}={{ item.value }}"
+  loop: "{{ sysctl_settings | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}={{ item.value }}"
+  when:
+    - sysctl_settings_config.changed
+    - not ansible_check_mode

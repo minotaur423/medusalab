@@ -1,0 +1,8 @@
+---
+- name: Configure MedusaLab load balancer kernel settings
+  hosts: load_balancers
+  become: true
+  gather_facts: false
+
+  roles:
+    - sysctl_settings

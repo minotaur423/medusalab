@@ -32,3 +32,6 @@ openshift_control_plane_nodes:
   - name: ocp-cp03
     address: 192.168.141.32
     ingress_address: 192.168.197.137
+
+sysctl_settings:
+  net.ipv4.conf.ens192.rp_filter: 2
