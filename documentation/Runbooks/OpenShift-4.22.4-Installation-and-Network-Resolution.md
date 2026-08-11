@@ -460,6 +460,41 @@ TLS=<nonzero value>
 
 ---
 
+## Athena Administrative Access
+
+Athena is the preferred external administration workstation for MedusaLab.
+
+Athena has direct routed management access to the RHEL infrastructure hosts
+through VMware VMnet1:
+
+| Host | Management Address |
+|---|---|
+| dns01 | 192.168.141.10 |
+| dns02 | 192.168.141.11 |
+| vault01 | 192.168.141.12 |
+| lb01 | 192.168.141.13 |
+
+SSH authentication from Athena to these systems uses an Ed25519 public key for
+the `minotaur423` account.
+
+Passwordless SSH transport has been validated with:
+
+    ssh -o BatchMode=yes minotaur423@<management-address> hostname
+
+Ansible therefore does not require `--ask-pass` for normal MedusaLab
+administration from Athena.
+
+Privileged playbooks continue to request the sudo/become password when needed:
+
+    ansible-playbook \
+      -i ansible/inventories/lab/hosts.yml \
+      <playbook> \
+      --ask-become-pass
+
+SSH password authentication remains enabled on the infrastructure systems as a
+recovery mechanism. Disabling password authentication is intentionally deferred
+to a separate SSH-hardening milestone.
+
 ## 11. Recommended Repository Placement
 
 Suggested path:
