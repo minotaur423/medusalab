@@ -303,3 +303,28 @@ The implementation successfully validated:
 * Add automated tests for authoritative and recursive responses.
 * Evaluate internal DNSSEC signing.
 
+
+---
+
+## Amendment — 2026-09-13
+
+The MedusaLab Ansible inventory layout has since been standardized under the
+lab-specific inventory directory:
+
+```text
+ansible/inventories/lab/
+
+Current DNS inventory sources are:
+
+ansible/inventories/lab/group_vars/dns_servers/main.yml
+ansible/inventories/lab/group_vars/dns_servers/vault.yml
+ansible/inventories/lab/group_vars/dns_primaries.yml
+ansible/inventories/lab/group_vars/dns_secondaries.yml
+
+The earlier ansible/inventory/... paths in this ADR are retained as part of
+the original architectural record. Operational procedures should use the
+current paths above and the current DNS runbooks.
+
+Then verify only—don't commit yet:
+
+```bash id="q0tke6"
