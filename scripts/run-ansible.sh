@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$HOME/lab/medusalab/ansible"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT/ansible"
 
 ANSIBLE_CONFIG="$PWD/ansible.cfg" ansible-playbook "$@"
