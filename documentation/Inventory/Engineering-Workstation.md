@@ -2,50 +2,144 @@
 
 ## Overview
 
-This document defines the standard software configuration for the MedusaLab engineering workstation.
+This document defines the standard software configuration for the primary
+MedusaLab engineering workstation.
 
-The workstation is designed to provide a reproducible Platform Engineering environment across Ubuntu WSL, Windows 11, and future Linux systems.
+The MedusaLab workstation is designed for OpenShift administration,
+Platform Engineering, infrastructure automation, source control, and Red Hat
+certification lab work.
+
+The primary workstation platform is Red Hat Enterprise Linux.
 
 ---
 
-# Operating System
+# Primary Workstation
 
-| Component | Version     | Verify                |
-| --------- | ----------- | --------------------- |
-| Ubuntu    | 24.04.4 LTS | `cat /etc/os-release` |
-| WSL       | Version 2   | `wsl --status`        |
+| Component | Value |
+| --- | --- |
+| Hostname | `ex180-client.medusalab.test` |
+| Operating System | Red Hat Enterprise Linux 10.2 |
+| Architecture | x86_64 |
+| Role | OpenShift and Platform Engineering administrative workstation |
+
+The authoritative MedusaLab repository is located at:
+
+    ~/projects/medusalab
+
+GitHub is the authoritative remote source of truth.
+
+---
+
+# Networking
+
+The workstation is connected to both MedusaLab VMware networks.
+
+| Interface Role | Network |
+| --- | --- |
+| Management | `192.168.141.0/24` |
+| Lab / NAT | `192.168.197.0/24` |
+
+The workstation uses the MedusaLab DNS infrastructure and can resolve both
+internal lab names and external Internet names.
 
 ---
 
 # Source Control
 
-| Tool    | Version | Install Method | Verify          |
-| ------- | ------- | -------------- | --------------- |
-| Git     | 2.43.0  | Ubuntu package | `git --version` |
-| OpenSSH | System  | Ubuntu package | `ssh -V`        |
+| Tool | Version / Configuration | Verify |
+| --- | --- | --- |
+| Git | 2.52.0 | `git --version` |
+| OpenSSH | System OpenSSH client | `ssh -V` |
 
-### Notes
+### Git Identity
 
-* SSH authentication has been configured for both GitHub and Bitbucket.
-* GitHub repository access uses SSH rather than HTTPS.
+The workstation uses the global Git identity configured for the MedusaLab
+administrator.
+
+### GitHub Access
+
+GitHub repository access uses SSH.
+
+The workstation SSH configuration selects the workstation GitHub key for
+`github.com`.
+
+Verify:
+
+    ssh -T git@github.com
 
 ---
 
-# Editors & Terminal
+# Editors and Terminal
 
-| Tool | Install Method | Verify               |
-| ---- | -------------- | -------------------- |
-| Vim  | Ubuntu package | `vim --version`      |
-| tmux | Ubuntu package | `tmux -V`            |
-| Bash | Ubuntu default | `echo $BASH_VERSION` |
+| Tool | Version | Verify |
+| --- | --- | --- |
+| Vim | 9.1 | `vim --version` |
+| tmux | 3.4 | `tmux -V` |
+| Bash | RHEL system Bash | `echo $BASH_VERSION` |
 
-### Notes
+The MedusaLab standard uses:
 
-The MedusaLab workstation standard uses:
+- Vim as the default editor
+- tmux for terminal multiplexing
+- Version-controlled dotfiles
 
-* Vim as the default editor
-* tmux for terminal multiplexing
-* Managed dotfiles stored in the repository
+Managed dotfiles:
+
+    dotfiles/vimrc
+    dotfiles/tmux.conf
+
+User configuration is linked to the repository:
+
+    ~/.vimrc
+    ~/.tmux.conf
+
+---
+
+# OpenShift and Kubernetes
+
+## OpenShift CLI
+
+| Tool | Version | Verify |
+| --- | --- | --- |
+| `oc` | 4.22.10 | `oc version --client` |
+
+The OpenShift CLI is the primary administrative interface for the MedusaLab
+OpenShift environment.
+
+The workstation administers the full MedusaLab OpenShift cluster rather than
+using OpenShift Local as its primary environment.
+
+Primary cluster:
+
+- OpenShift Container Platform 4.22
+- Three-node compact cluster
+- Nodes: `ocp-cp01`, `ocp-cp02`, `ocp-cp03`
+
+---
+
+## kubectl
+
+| Tool | Version | Verify |
+| --- | --- | --- |
+| `kubectl` | 1.35.2 | `kubectl version --client` |
+
+`kubectl` is retained for Kubernetes-compatible workflows, but `oc` is the
+preferred OpenShift administration interface.
+
+---
+
+## Helm
+
+| Tool | Version | Install Method | Verify |
+| --- | --- | --- | --- |
+| Helm | 3.22.0 | Official Helm project installer | `helm version --short` |
+
+Installer:
+
+    scripts/installers/install-helm.sh
+
+The installer detects the operating system and treats the RHEL family as the
+primary platform while preserving Debian/Ubuntu support where practical.
 
 ---
 
@@ -53,144 +147,109 @@ The MedusaLab workstation standard uses:
 
 ## Ansible
 
-* Purpose: Configuration management and workstation automation.
-* Install Method: Official Ansible PPA.
-* Installer: `scripts/installers/install-ansible.sh`
-* Verify: `ansible --version`
+| Tool | Version | Verify |
+| --- | --- | --- |
+| Ansible Core | 2.16.16 | `ansible --version` |
 
-### Configuration
+Purpose:
 
-* Inventory: `ansible/inventory/hosts.yml`
-* Configuration: `ansible/ansible.cfg`
-* Bootstrap Playbook: `ansible/playbooks/bootstrap.yml`
-* Verification Role: `ansible/roles/verification`
+- Configuration management
+- Lab automation
+- Linux host configuration
+- OpenShift supporting infrastructure
 
-### Notes
+Configuration:
 
-The engineering workstation is treated as the first managed infrastructure node (`localhost`). This establishes the automation framework that will later manage Linux virtual machines, Windows Server systems, Kubernetes nodes, and platform services.
+    ansible/ansible.cfg
+
+Inventories:
+
+    ansible/inventories/
+
+Playbooks:
+
+    ansible/playbooks/
 
 ---
 
 ## Terraform
 
-* Purpose: Infrastructure as Code provisioning.
-* Install Method: HashiCorp APT repository.
-* Installer: `scripts/installers/install-terraform.sh`
-* Verify: `terraform version`
+| Tool | Version | Install Method | Verify |
+| --- | --- | --- | --- |
+| Terraform | 1.16.2 | Official HashiCorp RHEL repository | `terraform version` |
+
+Installer:
+
+    scripts/installers/install-terraform.sh
+
+The installer uses the HashiCorp RHEL repository on RHEL-family systems and
+retains Debian/Ubuntu support where practical.
 
 ---
 
-# Kubernetes
+# Container Tooling
 
-## kubectl
+## Podman
 
-* Purpose: Kubernetes command-line client.
-* Install Method: Official Kubernetes APT repository.
-* Installer: `scripts/installers/install-kubectl.sh`
-* Verify: `kubectl version --client`
+| Tool | Version | Verify |
+| --- | --- | --- |
+| Podman | 5.8.2 | `podman --version` |
 
-### Notes
-
-kubectl is the primary administrative interface for Kubernetes clusters within MedusaLab.
-
-## k9s
-
-- Purpose: Terminal UI for managing Kubernetes clusters.
-- Install Method: GitHub release tarball via `scripts/installers/install-k9s.sh`.
-- Verify: `k9s version`
+Podman is the preferred local container engine on the RHEL workstation.
 
 ---
 
-## Helm
+# Scripting and Data Utilities
 
-* Purpose: Kubernetes package manager.
-* Install Method: Official Helm APT repository.
-* Installer: `scripts/installers/install-helm.sh`
-* Verify: `helm version`
+| Tool | Version | Verify |
+| --- | --- | --- |
+| Python | 3.12.14 | `python3 --version` |
+| jq | Installed | `jq --version` |
+| yq | 4.53.6 | `yq --version` |
 
----
-
-# Cross-Platform Tools
-
-## PowerShell 7
-
-* Purpose: Cross-platform automation shell.
-* Install Method: Microsoft APT repository.
-* Installer: `scripts/installers/install-powershell.sh`
-* Verify: `pwsh --version`
-
-# Utilities
-
-## yq
-
-- Purpose: YAML, JSON, XML, CSV, TOML, and properties processor.
-- Install Method: GitHub release binary via `scripts/installers/install-yq.sh`.
-- Verify: `yq --version`
+The `jq` installation should be validated separately because its version
+output currently appears abnormal.
 
 ---
 
-# Workstation Standards
+# Workstation Configuration Strategy
 
-## Repository
+MedusaLab workstation configuration follows these standards:
 
-* Git is the source of truth.
-* Dotfiles are version controlled.
-* Installer scripts are idempotent.
-* Bootstrap provisions the engineering workstation.
+- Git is the source of truth.
+- RHEL is the primary workstation platform.
+- Dotfiles are version controlled.
+- Installer scripts should be idempotent.
+- Installer scripts must detect the operating-system family where needed.
+- Official vendor repositories or upstream installation methods are preferred.
+- Debian/Ubuntu compatibility may be retained where practical.
+- Major tools must provide an installation method and verification command.
 
-## Automation
+Shared operating-system detection is implemented in:
 
-Every workstation component must provide:
-
-* Installation script
-* Verification command
-* Documentation
-* Ansible verification
-* Git history
+    scripts/lib/common.sh
 
 ---
 
-# Planned Tools
+# Secondary Environments
 
-The following components will be added in future phases:
+Windows 11 and Ubuntu WSL remain useful secondary environments for
+administration, testing, and compatibility work.
 
-* k9s
-* Docker CLI
-* Node.js LTS
-* yq
-* Azure CLI
-* AWS CLI
-* RKE2
-* Rancher
-* Jenkins
-* Artifactory
-* Vault
-* Grafana
-* Prometheus
+OpenShift Local may still be used for isolated testing, but it is not the
+primary MedusaLab OpenShift platform.
 
-## OpenShift Client Toolchain
+The primary OpenShift environment is the full MedusaLab cluster.
 
-Ubuntu WSL serves as the primary command-line client for the Windows-hosted OpenShift Local environment.
+---
 
-Installed client tools:
+# Future Work
 
-* OpenShift CLI (`oc`)
-* Kubernetes CLI (`kubectl`)
-* Helm
-* k9s
-* yq
+Future workstation improvements may include:
 
-OpenShift Local runs on the Windows host through Hyper-V. The Ubuntu client connects to:
-
-```text
-https://api.crc.testing:6443
-```
-
-The default Linux kubeconfig is:
-
-```text
-~/.kube/config
-```
-
-The Ansible workstation-verification role validates local client installation independently of cluster availability. OpenShift cluster-health checks are performed separately because they require CRC to be running and the user to have a valid authenticated kubeconfig.
-
+- Dedicated daily-use OpenShift kubeconfig separated from installation assets
+- Workstation DNS registration
+- Additional shell and CLI quality-of-life configuration
+- Workstation health-check automation
+- RHEL-first installer support for additional tools
+- Documentation of workstation rebuild procedures
