@@ -204,11 +204,11 @@ Podman is the preferred local container engine on the RHEL workstation.
 | Tool | Version | Verify |
 | --- | --- | --- |
 | Python | 3.12.14 | `python3 --version` |
-| jq | Installed | `jq --version` |
+| jq | 1.7.1 | `jq --version` |
 | yq | 4.53.6 | `yq --version` |
 
-The `jq` installation should be validated separately because its version
-output currently appears abnormal.
+The RHEL jq package reports version 1.7.1 through RPM metadata. Its embedded `jq --version`
+output currently returns `jq-`, but functional JSON processing has been verified.
 
 ---
 
