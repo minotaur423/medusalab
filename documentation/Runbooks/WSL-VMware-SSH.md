@@ -139,7 +139,7 @@ cd ~/lab/medusalab
 
 ANSIBLE_CONFIG="$PWD/ansible/ansible.cfg" \
 ansible rhel_managed \
-  -i ansible/inventory/hosts.yml \
+  -i ansible/inventories/lab/hosts.yml \
   -m ansible.builtin.ping
 ```
 

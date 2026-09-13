@@ -42,10 +42,10 @@ ansible/playbooks/dns-server.yml
 ansible/playbooks/dns-clients.yml
 ansible/roles/bind_dns/
 ansible/roles/dns_client/
-ansible/inventory/group_vars/dns_servers/main.yml
-ansible/inventory/group_vars/dns_servers/vault.yml
-ansible/inventory/group_vars/dns_primaries.yml
-ansible/inventory/group_vars/dns_secondaries.yml
+ansible/inventories/lab/group_vars/dns_servers/main.yml
+ansible/inventories/lab/group_vars/dns_servers/vault.yml
+ansible/inventories/lab/group_vars/dns_primaries.yml
+ansible/inventories/lab/group_vars/dns_secondaries.yml
 ```
 
 ## TSIG Secret
@@ -59,7 +59,7 @@ bind_dns_transfer_secret
 It is stored in:
 
 ```text
-ansible/inventory/group_vars/dns_servers/vault.yml
+ansible/inventories/lab/group_vars/dns_servers/vault.yml
 ```
 
 The file may be committed only while the value remains encrypted with Ansible Vault.
@@ -188,7 +188,7 @@ grep -Ei 'transfer|transferred|loaded serial|notify'
 Edit:
 
 ```bash
-vim ansible/inventory/group_vars/dns_servers/main.yml
+vim ansible/inventories/lab/group_vars/dns_servers/main.yml
 ```
 
 Modify the appropriate record lists:

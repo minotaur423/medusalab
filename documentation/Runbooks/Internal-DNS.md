@@ -46,9 +46,9 @@ ansible/playbooks/dns-server.yml
 ansible/playbooks/dns-clients.yml
 ansible/roles/bind_dns/
 ansible/roles/dns_client/
-ansible/inventory/group_vars/dns_servers.yml
-ansible/inventory/host_vars/rhel10-test01.yml
-ansible/inventory/host_vars/ubuntu-test01.yml
+ansible/inventories/lab/group_vars/dns_servers/main.yml
+ansible/inventories/lab/host_vars/rhel10-test01.yml
+ansible/inventories/lab/host_vars/ubuntu-test01.yml
 ```
 
 ## Managed Server Files
@@ -223,7 +223,7 @@ dnsTunneling=true
 Edit:
 
 ```bash
-vim ansible/inventory/group_vars/dns_servers.yml
+vim ansible/inventories/lab/group_vars/dns_servers/main.yml
 ```
 
 Add or modify the required entries in:
