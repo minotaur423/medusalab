@@ -115,6 +115,25 @@ Primary cluster:
 - Three-node compact cluster
 - Nodes: `ocp-cp01`, `ocp-cp02`, `ocp-cp03`
 
+### Daily Administrative Kubeconfig
+
+The engineering workstation uses a dedicated daily-use kubeconfig:
+
+    ~/.kube/medusalab-admin
+
+The interactive shell exports:
+
+    KUBECONFIG="$HOME/.kube/medusalab-admin"
+
+This file was derived from the known-working MedusaLab administrative
+configuration and is intentionally separated from the original OpenShift
+installation and disaster-recovery assets under:
+
+    ~/.openshift/ocp-retry1/
+
+The installation/recovery kubeconfig is retained for historical and recovery
+purposes and is not used for normal daily administration.
+
 ---
 
 ## kubectl
